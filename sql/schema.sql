@@ -217,11 +217,14 @@ create policy "schedules: update own rows"
 -- ─────────────────────────────────────────────────────────────
 
 create table if not exists public.workouts (
-  id            uuid primary key default gen_random_uuid(),
-  wrestler_id   uuid not null references public.wrestlers(id) on delete cascade,
-  workout_date  date not null,
-  notes         text,
-  created_at    timestamptz not null default now()
+  id              uuid primary key default gen_random_uuid(),
+  wrestler_id     uuid not null references public.wrestlers(id) on delete cascade,
+  workout_type    text not null default 'lifting'
+                    check (workout_type in ('lifting', 'practice', 'cardio', 'other')),
+  workout_date    date not null,
+  duration_minutes int,
+  notes           text,
+  created_at      timestamptz not null default now()
 );
 
 alter table public.workouts enable row level security;
@@ -375,8 +378,8 @@ declare
   v_wrestler_id uuid := auth.uid();
   ex jsonb;
 begin
-  insert into public.workouts (wrestler_id, workout_date, notes)
-  values (v_wrestler_id, p_workout_date, p_notes)
+  insert into public.workouts (wrestler_id, workout_type, workout_date, duration_minutes, notes)
+  values (v_wrestler_id, 'lifting', p_workout_date, null, p_notes)
   returning id into v_workout_id;
 
   for ex in select * from jsonb_array_elements(p_exercises)

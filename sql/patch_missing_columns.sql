@@ -206,12 +206,21 @@ $$;
 -- workouts (new table)
 -- ─────────────────────────────────────────────────────────────
 create table if not exists public.workouts (
-  id            uuid primary key default gen_random_uuid(),
-  wrestler_id   uuid not null references public.wrestlers(id) on delete cascade,
-  workout_date  date not null,
-  notes         text,
-  created_at    timestamptz not null default now()
+  id              uuid primary key default gen_random_uuid(),
+  wrestler_id     uuid not null references public.wrestlers(id) on delete cascade,
+  workout_type    text not null default 'lifting'
+                    check (workout_type in ('lifting', 'practice', 'cardio', 'other')),
+  workout_date    date not null,
+  duration_minutes int,
+  notes           text,
+  created_at      timestamptz not null default now()
 );
+
+-- If workouts table already exists, add missing columns
+alter table public.workouts
+  add column if not exists workout_type text not null default 'lifting';
+alter table public.workouts
+  add column if not exists duration_minutes int;
 
 alter table public.workouts enable row level security;
 
