@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+
+const API_URL = import.meta.env.VITE_API_URL
+const PAGE_SIZE = 15
 
 const WIN_TYPES = ['decision', 'major', 'tech', 'pin', 'forfeit']
 const RESULTS = ['win', 'loss', 'draw']
@@ -9,9 +13,10 @@ const inputClass =
 const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
 
 export default function Matches() {
-  const [matches, setMatches] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const queryClient = useQueryClient()
+  const [uid, setUid] = useState(null)
+  const [page, setPage] = useState(0)
+  const [allMatches, setAllMatches] = useState([])
 
   const [opponent, setOpponent] = useState('')
   const [result, setResult] = useState('win')
@@ -22,26 +27,59 @@ export default function Matches() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
 
+  // Match outcome prediction
+  const [outcomeWeight, setOutcomeWeight] = useState('')
+  const [outcomeClass, setOutcomeClass] = useState('')
+  const [outcomeResult, setOutcomeResult] = useState(null)
+  const [outcomeLoading, setOutcomeLoading] = useState(false)
+
   useEffect(() => {
-    loadMatches()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setUid(session.user.id)
+    })
   }, [])
 
-  async function loadMatches() {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
+  // All-time W-L record (no range limit)
+  const { data: allResults = [] } = useQuery({
+    queryKey: ['matches-record', uid],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('matches')
-        .select('*')
-        .eq('wrestler_id', session.user.id)
-        .order('match_date', { ascending: false })
+        .select('result')
+        .eq('wrestler_id', uid)
       if (error) throw error
-      setMatches(data ?? [])
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
+      return data ?? []
+    },
+    enabled: !!uid,
+    staleTime: 60_000,
+  })
+
+  // Paginated match list
+  const { data: pageData, isFetching, isLoading, error } = useQuery({
+    queryKey: ['matches', uid, page],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('matches')
+        .select('id, match_date, opponent_name, result, score, win_type, tournament')
+        .eq('wrestler_id', uid)
+        .order('match_date', { ascending: false })
+        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1)
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: !!uid,
+    staleTime: 30_000,
+  })
+
+  // Accumulate pages
+  useEffect(() => {
+    if (!pageData) return
+    if (page === 0) {
+      setAllMatches(pageData)
+    } else {
+      setAllMatches(prev => [...prev, ...pageData])
     }
-  }
+  }, [pageData]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -49,6 +87,7 @@ export default function Matches() {
     setSubmitting(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
       const { error } = await supabase.from('matches').insert({
         wrestler_id: session.user.id,
         opponent_name: opponent,
@@ -63,7 +102,11 @@ export default function Matches() {
       setScore('')
       setTournament('')
       setMatchDate(new Date().toISOString().split('T')[0])
-      await loadMatches()
+      setPage(0)
+      setAllMatches([])
+      queryClient.invalidateQueries({ queryKey: ['matches', uid] })
+      queryClient.invalidateQueries({ queryKey: ['matches-record', uid] })
+      queryClient.invalidateQueries({ queryKey: ['matches-dropdown', uid] })
     } catch (err) {
       setSubmitError(err.message)
     } finally {
@@ -71,11 +114,48 @@ export default function Matches() {
     }
   }
 
-  if (loading) return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
-  if (error) return <div className="font-mono text-red-400 text-sm">{error}</div>
+  async function handleMatchOutcome(e) {
+    e.preventDefault()
+    setOutcomeResult(null)
+    setOutcomeLoading(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const res = await fetch(`${API_URL}/predict/match-outcome`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          your_weight_on_day: parseFloat(outcomeWeight),
+          target_weight_class: parseInt(outcomeClass),
+        }),
+      })
+      if (res.ok) setOutcomeResult(await res.json())
+    } catch {
+      // fail silently
+    } finally {
+      setOutcomeLoading(false)
+    }
+  }
 
-  const wins = matches.filter(m => m.result === 'win').length
-  const losses = matches.filter(m => m.result === 'loss').length
+  const wins = allResults.filter(m => m.result === 'win').length
+  const losses = allResults.filter(m => m.result === 'loss').length
+  const totalMatches = allResults.length
+  const hasMore = pageData?.length === PAGE_SIZE
+
+  if (isLoading && page === 0) {
+    return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
+  }
+
+  if (error) {
+    return (
+      <div className="font-mono text-red-400 text-sm border border-red-900/50 bg-red-950/20 px-3 py-2">
+        Failed to load matches: {error.message}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -176,18 +256,94 @@ export default function Matches() {
         </form>
       </div>
 
+      {/* Match outcome predictor */}
+      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+        <div className="flex items-baseline gap-4 mb-5">
+          <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706]">MATCH OUTCOME PREDICTOR</div>
+          {totalMatches < 10 && (
+            <div className="text-[10px] font-mono text-[#444]">
+              {10 - totalMatches} more match{10 - totalMatches !== 1 ? 'es' : ''} needed for a real prediction
+            </div>
+          )}
+        </div>
+        <form onSubmit={handleMatchOutcome} className="flex items-end gap-4">
+          <div className="w-44">
+            <label className="block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2">YOUR WEIGHT (LBS)</label>
+            <input
+              type="number"
+              step="0.1"
+              min="50"
+              max="400"
+              value={outcomeWeight}
+              onChange={e => setOutcomeWeight(e.target.value)}
+              required
+              className="w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a]"
+              placeholder="155.0"
+            />
+          </div>
+          <div className="w-44">
+            <label className="block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2">TARGET CLASS (LBS)</label>
+            <input
+              type="number"
+              value={outcomeClass}
+              onChange={e => setOutcomeClass(e.target.value)}
+              required
+              className="w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a]"
+              placeholder="152"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={outcomeLoading}
+            className="border border-[#d97706] text-[#d97706] font-display font-bold text-[10px] tracking-[0.25em] px-6 py-2.5 hover:bg-[#d97706]/10 transition-colors disabled:opacity-40 shrink-0"
+          >
+            {outcomeLoading ? 'ANALYZING...' : 'PREDICT'}
+          </button>
+        </form>
+
+        {outcomeResult && (
+          <div className="mt-5 pt-4 border-t border-[#1a1a1a]">
+            <div className="flex items-center gap-8 mb-4">
+              <div>
+                <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">WIN PROBABILITY</div>
+                <div className="font-mono text-3xl font-bold text-[#f0f0f0] mt-1">
+                  {(outcomeResult.win_probability * 100).toFixed(0)}
+                  <span className="text-sm text-[#555] ml-1">%</span>
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">CONFIDENCE</div>
+                <div className={`font-mono text-sm font-bold mt-1 tracking-wider ${
+                  outcomeResult.confidence === 'high' ? 'text-green-500'
+                  : outcomeResult.confidence === 'medium' ? 'text-[#d97706]'
+                  : 'text-[#555]'
+                }`}>
+                  {outcomeResult.confidence.toUpperCase()}
+                </div>
+              </div>
+            </div>
+            <ul className="space-y-1">
+              {outcomeResult.factors.map((f, i) => (
+                <li key={i} className="font-mono text-[11px] text-[#666] before:content-['—'] before:mr-2 before:text-[#333]">
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
       {/* Match list */}
       <div className="border border-[#1a1a1a]">
-        {/* Header row */}
         <div className="grid grid-cols-5 px-5 py-3 border-b border-[#1a1a1a] bg-[#080808]">
           {['DATE', 'OPPONENT', 'RESULT', 'SCORE', 'TOURNAMENT'].map(h => (
             <div key={h} className="text-[10px] font-display tracking-[0.15em] text-[#444]">{h}</div>
           ))}
         </div>
-        {matches.length === 0 ? (
+        {allMatches.length === 0 ? (
           <div className="px-5 py-6 font-mono text-xs text-[#333]">No matches logged yet.</div>
         ) : (
-          matches.map(m => (
+          allMatches.map(m => (
             <div
               key={m.id}
               className="grid grid-cols-5 px-5 py-3.5 border-b border-[#111] hover:bg-[#0d0d0d] transition-colors"
@@ -216,6 +372,22 @@ export default function Matches() {
           ))
         )}
       </div>
+
+      {/* Load more */}
+      {hasMore && (
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={isFetching}
+            className="px-6 py-2 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#555] hover:border-[#d97706] hover:text-[#d97706] transition-colors disabled:opacity-40"
+          >
+            {isFetching ? 'LOADING...' : 'LOAD MORE'}
+          </button>
+          {isFetching && (
+            <span className="font-mono text-[10px] text-[#333]">fetching...</span>
+          )}
+        </div>
+      )}
     </div>
   )
 }

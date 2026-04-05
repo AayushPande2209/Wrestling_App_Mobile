@@ -1,7 +1,7 @@
 from datetime import date, datetime
 
 import numpy as np
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sklearn.linear_model import LinearRegression
 
 from app.auth import get_current_user
@@ -62,7 +62,10 @@ def predict_weight_trend(
         return datetime.fromisoformat(s.replace("Z", "+00:00")).date()
 
     first_date = parse_date(logs[0]["logged_at"])
-    target = date.fromisoformat(body.target_date)
+    try:
+        target = date.fromisoformat(body.target_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid target_date — expected ISO format (YYYY-MM-DD)")
 
     xs = np.array(
         [(parse_date(log["logged_at"]) - first_date).days for log in logs]

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 
+const PAGE_SIZE = 20
 const CONTEXTS = ['general', 'practice', 'match']
 
 const CONTEXT_STYLE = {
@@ -14,11 +16,11 @@ const inputClass =
 const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
 
 export default function Notes() {
-  const [notes, setNotes] = useState([])
-  const [matches, setMatches] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const queryClient = useQueryClient()
+  const [uid, setUid] = useState(null)
   const [filter, setFilter] = useState('all')
+  const [page, setPage] = useState(0)
+  const [allNotes, setAllNotes] = useState([])
 
   const [body, setBody] = useState('')
   const [context, setContext] = useState('general')
@@ -28,35 +30,53 @@ export default function Notes() {
   const [submitSuccess, setSubmitSuccess] = useState(false)
 
   useEffect(() => {
-    loadData()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setUid(session.user.id)
+    })
   }, [])
 
-  async function loadData() {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const uid = session.user.id
-      const [{ data: notesData, error: ne }, { data: matchesData }] = await Promise.all([
-        supabase
-          .from('notes')
-          .select('*')
-          .eq('wrestler_id', uid)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('matches')
-          .select('id, opponent_name, match_date')
-          .eq('wrestler_id', uid)
-          .order('match_date', { ascending: false })
-          .limit(10),
-      ])
-      if (ne) throw ne
-      setNotes(notesData ?? [])
-      setMatches(matchesData ?? [])
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
+  // Paginated notes
+  const { data: pageData, isFetching, isLoading, error } = useQuery({
+    queryKey: ['notes', uid, page],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('id, created_at, context, body, match_id')
+        .eq('wrestler_id', uid)
+        .order('created_at', { ascending: false })
+        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1)
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: !!uid,
+    staleTime: 30_000,
+  })
+
+  // All matches for the dropdown (no pagination)
+  const { data: matches = [] } = useQuery({
+    queryKey: ['matches-dropdown', uid],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('matches')
+        .select('id, opponent_name, match_date')
+        .eq('wrestler_id', uid)
+        .order('match_date', { ascending: false })
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: !!uid,
+    staleTime: 30_000,
+  })
+
+  // Accumulate pages
+  useEffect(() => {
+    if (!pageData) return
+    if (page === 0) {
+      setAllNotes(pageData)
+    } else {
+      setAllNotes(prev => [...prev, ...pageData])
     }
-  }
+  }, [pageData]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -65,6 +85,7 @@ export default function Notes() {
     setSubmitting(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
       const { error } = await supabase.from('notes').insert({
         wrestler_id: session.user.id,
         body,
@@ -75,7 +96,9 @@ export default function Notes() {
       setBody('')
       setMatchId('')
       setSubmitSuccess(true)
-      await loadData()
+      setPage(0)
+      setAllNotes([])
+      queryClient.invalidateQueries({ queryKey: ['notes', uid] })
     } catch (err) {
       setSubmitError(err.message)
     } finally {
@@ -83,10 +106,20 @@ export default function Notes() {
     }
   }
 
-  if (loading) return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
-  if (error) return <div className="font-mono text-red-400 text-sm">{error}</div>
+  const hasMore = pageData?.length === PAGE_SIZE
+  const filtered = filter === 'all' ? allNotes : allNotes.filter(n => n.context === filter)
 
-  const filtered = filter === 'all' ? notes : notes.filter(n => n.context === filter)
+  if (isLoading && page === 0) {
+    return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
+  }
+
+  if (error) {
+    return (
+      <div className="font-mono text-red-400 text-sm border border-red-900/50 bg-red-950/20 px-3 py-2">
+        Failed to load notes: {error.message}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -193,7 +226,7 @@ export default function Notes() {
                 </span>
                 <span className="font-mono text-[10px] text-[#3a3a3a]">
                   {new Date(note.created_at)
-                    .toLocaleDateString('en-US', {
+                    .toLocaleString('en-US', {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
@@ -208,6 +241,22 @@ export default function Notes() {
               </p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Load more */}
+      {hasMore && (
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={isFetching}
+            className="px-6 py-2 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#555] hover:border-[#d97706] hover:text-[#d97706] transition-colors disabled:opacity-40"
+          >
+            {isFetching ? 'LOADING...' : 'LOAD MORE'}
+          </button>
+          {isFetching && (
+            <span className="font-mono text-[10px] text-[#333]">fetching...</span>
+          )}
         </div>
       )}
     </div>

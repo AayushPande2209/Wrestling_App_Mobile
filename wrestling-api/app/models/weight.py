@@ -1,10 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class WeightCutRequest(BaseModel):
     current_weight: float
     target_weight_class: int
-    days_until_weigh_in: int
+    days_until_weigh_in: int = Field(gt=0)
 
 
 class WeightCutResponse(BaseModel):

@@ -19,7 +19,7 @@ export default function Auth() {
         const { data, error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
         if (data.user) {
-          await supabase.from('wrestlers').insert({ id: data.user.id, name: email })
+          await supabase.from('wrestlers').insert({ id: data.user.id, email, name: null })
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })

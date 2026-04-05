@@ -5,6 +5,10 @@ import WeightLog from './pages/WeightLog'
 import Matches from './pages/Matches'
 import Notes from './pages/Notes'
 import Schedule from './pages/Schedule'
+import Profile from './pages/Profile'
+import Records from './pages/Records'
+import Timeline from './pages/Timeline'
+import Board from './pages/Board'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -58,6 +62,38 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Layout><Schedule /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Layout><Profile /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/records"
+          element={
+            <ProtectedRoute>
+              <Layout><Records /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/timeline"
+          element={
+            <ProtectedRoute>
+              <Layout><Timeline /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/board"
+          element={
+            <ProtectedRoute>
+              <Layout><Board /></Layout>
             </ProtectedRoute>
           }
         />

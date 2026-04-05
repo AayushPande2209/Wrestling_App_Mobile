@@ -19,9 +19,9 @@ router = APIRouter()
 def get_performance_trend(user: dict = Depends(get_current_user)):
     response = (
         supabase.table("matches")
-        .select("result, created_at")
+        .select("result, match_date")
         .eq("wrestler_id", user["sub"])
-        .order("created_at")
+        .order("match_date")
         .execute()
     )
     matches = response.data
@@ -67,9 +67,9 @@ def predict_match_outcome(
 ):
     matches_resp = (
         supabase.table("matches")
-        .select("result, created_at, win_type")
+        .select("result, match_date, win_type")
         .eq("wrestler_id", user["sub"])
-        .order("created_at")
+        .order("match_date")
         .execute()
     )
     matches = matches_resp.data

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 
+const PAGE_SIZE = 20
 const EVENT_TYPES = ['practice', 'tournament', 'dual meet', 'other']
 
 const TYPE_COLOR = {
@@ -50,9 +52,15 @@ function EventRow({ event, muted }) {
 }
 
 export default function Schedule() {
-  const [events, setEvents] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const queryClient = useQueryClient()
+  const [uid, setUid] = useState(null)
+  // Captured once at mount — stable boundary between upcoming and past
+  const [nowIso] = useState(() => new Date().toISOString())
+
+  const [upcomingPage, setUpcomingPage] = useState(0)
+  const [pastPage, setPastPage] = useState(0)
+  const [allUpcoming, setAllUpcoming] = useState([])
+  const [allPast, setAllPast] = useState([])
 
   const [title, setTitle] = useState('')
   const [eventType, setEventType] = useState('practice')
@@ -63,32 +71,88 @@ export default function Schedule() {
   const [submitError, setSubmitError] = useState(null)
 
   useEffect(() => {
-    loadEvents()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setUid(session.user.id)
+    })
   }, [])
 
-  async function loadEvents() {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
+  // Upcoming events (paginated, ascending)
+  const {
+    data: upcomingPage_data,
+    isFetching: upcomingFetching,
+    isLoading: upcomingLoading,
+    error: upcomingError,
+  } = useQuery({
+    queryKey: ['schedules-upcoming', uid, upcomingPage],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('schedules')
-        .select('*')
-        .eq('wrestler_id', session.user.id)
+        .select('id, title, event_type, starts_at, ends_at, location')
+        .eq('wrestler_id', uid)
+        .gt('starts_at', nowIso)
         .order('starts_at', { ascending: true })
+        .range(upcomingPage * PAGE_SIZE, upcomingPage * PAGE_SIZE + PAGE_SIZE - 1)
       if (error) throw error
-      setEvents(data ?? [])
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
+      return data ?? []
+    },
+    enabled: !!uid,
+    staleTime: 30_000,
+  })
+
+  // Past events (paginated, descending)
+  const {
+    data: pastPage_data,
+    isFetching: pastFetching,
+    isLoading: pastLoading,
+    error: pastError,
+  } = useQuery({
+    queryKey: ['schedules-past', uid, pastPage],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('id, title, event_type, starts_at, ends_at, location')
+        .eq('wrestler_id', uid)
+        .lte('starts_at', nowIso)
+        .order('starts_at', { ascending: false })
+        .range(pastPage * PAGE_SIZE, pastPage * PAGE_SIZE + PAGE_SIZE - 1)
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: !!uid,
+    staleTime: 30_000,
+  })
+
+  // Accumulate upcoming pages
+  useEffect(() => {
+    if (!upcomingPage_data) return
+    if (upcomingPage === 0) {
+      setAllUpcoming(upcomingPage_data)
+    } else {
+      setAllUpcoming(prev => [...prev, ...upcomingPage_data])
     }
-  }
+  }, [upcomingPage_data]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Accumulate past pages
+  useEffect(() => {
+    if (!pastPage_data) return
+    if (pastPage === 0) {
+      setAllPast(pastPage_data)
+    } else {
+      setAllPast(prev => [...prev, ...pastPage_data])
+    }
+  }, [pastPage_data]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e) {
     e.preventDefault()
     setSubmitError(null)
+    if (endsAt && endsAt <= startsAt) {
+      setSubmitError('End time must be after start time.')
+      return
+    }
     setSubmitting(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
       const { error } = await supabase.from('schedules').insert({
         wrestler_id: session.user.id,
         title,
@@ -102,7 +166,12 @@ export default function Schedule() {
       setStartsAt('')
       setEndsAt('')
       setLocation('')
-      await loadEvents()
+      setUpcomingPage(0)
+      setPastPage(0)
+      setAllUpcoming([])
+      setAllPast([])
+      queryClient.invalidateQueries({ queryKey: ['schedules-upcoming', uid] })
+      queryClient.invalidateQueries({ queryKey: ['schedules-past', uid] })
     } catch (err) {
       setSubmitError(err.message)
     } finally {
@@ -110,12 +179,13 @@ export default function Schedule() {
     }
   }
 
-  if (loading) return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
-  if (error) return <div className="font-mono text-red-400 text-sm">{error}</div>
+  const hasMoreUpcoming = upcomingPage_data?.length === PAGE_SIZE
+  const hasMorePast = pastPage_data?.length === PAGE_SIZE
+  const initialLoading = (upcomingLoading || pastLoading) && upcomingPage === 0 && pastPage === 0
 
-  const now = new Date()
-  const upcoming = events.filter(e => new Date(e.starts_at) > now)
-  const past = [...events.filter(e => new Date(e.starts_at) <= now)].reverse()
+  if (initialLoading) {
+    return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
+  }
 
   return (
     <div className="space-y-8">
@@ -195,30 +265,68 @@ export default function Schedule() {
       </div>
 
       {/* Upcoming */}
-      {upcoming.length > 0 && (
+      {(allUpcoming.length > 0 || upcomingError) && (
         <div>
           <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-3">
-            UPCOMING — {upcoming.length}
+            UPCOMING — {allUpcoming.length}{hasMoreUpcoming ? '+' : ''}
           </div>
-          <div className="border border-[#1a1a1a]">
-            {upcoming.map(e => <EventRow key={e.id} event={e} muted={false} />)}
-          </div>
+          {upcomingError ? (
+            <p className="font-mono text-red-400 text-sm border border-red-900/50 bg-red-950/20 px-3 py-2">
+              Failed to load upcoming events: {upcomingError.message}
+            </p>
+          ) : (
+            <>
+              <div className="border border-[#1a1a1a]">
+                {allUpcoming.map(e => <EventRow key={e.id} event={e} muted={false} />)}
+              </div>
+              {hasMoreUpcoming && (
+                <div className="mt-3 flex items-center gap-4">
+                  <button
+                    onClick={() => setUpcomingPage(p => p + 1)}
+                    disabled={upcomingFetching}
+                    className="px-6 py-2 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#555] hover:border-[#d97706] hover:text-[#d97706] transition-colors disabled:opacity-40"
+                  >
+                    {upcomingFetching ? 'LOADING...' : 'LOAD MORE'}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
       {/* Past */}
-      {past.length > 0 && (
+      {(allPast.length > 0 || pastError) && (
         <div>
           <div className="text-[10px] font-display tracking-[0.15em] text-[#444] mb-3">
-            PAST — {past.length}
+            PAST — {allPast.length}{hasMorePast ? '+' : ''}
           </div>
-          <div className="border border-[#1a1a1a]">
-            {past.map(e => <EventRow key={e.id} event={e} muted={true} />)}
-          </div>
+          {pastError ? (
+            <p className="font-mono text-red-400 text-sm border border-red-900/50 bg-red-950/20 px-3 py-2">
+              Failed to load past events: {pastError.message}
+            </p>
+          ) : (
+            <>
+              <div className="border border-[#1a1a1a]">
+                {allPast.map(e => <EventRow key={e.id} event={e} muted={true} />)}
+              </div>
+              {hasMorePast && (
+                <div className="mt-3 flex items-center gap-4">
+                  <button
+                    onClick={() => setPastPage(p => p + 1)}
+                    disabled={pastFetching}
+                    className="px-6 py-2 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#555] hover:border-[#d97706] hover:text-[#d97706] transition-colors disabled:opacity-40"
+                  >
+                    {pastFetching ? 'LOADING...' : 'LOAD MORE'}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
-      {events.length === 0 && (
+      {allUpcoming.length === 0 && allPast.length === 0 && !upcomingLoading && !pastLoading && (
         <p className="font-mono text-xs text-[#333]">No events scheduled yet.</p>
       )}
     </div>
