@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import weight, performance
+from app.routers import weight, performance, nutrition
 
 load_dotenv()
 
@@ -24,6 +24,7 @@ app.add_middleware(
  
 app.include_router(weight.router, prefix="/predict", tags=["weight"])
 app.include_router(performance.router, prefix="/predict", tags=["performance"])
+app.include_router(nutrition.router, prefix="/predict", tags=["nutrition"])
  
  
 @app.get("/health")

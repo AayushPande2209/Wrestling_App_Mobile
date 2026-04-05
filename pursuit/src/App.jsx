@@ -8,6 +8,7 @@ import Notes from './pages/Notes'
 import Schedule from './pages/Schedule'
 import Workouts from './pages/Workouts'
 import Goals from './pages/Goals'
+import Nutrition from './pages/Nutrition'
 import Profile from './pages/Profile'
 import Records from './pages/Records'
 import Timeline from './pages/Timeline'
@@ -82,6 +83,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Layout><Goals /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/nutrition"
+          element={
+            <ProtectedRoute>
+              <Layout><Nutrition /></Layout>
             </ProtectedRoute>
           }
         />

@@ -42,6 +42,7 @@
 - `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key (server-side only, never exposed to client)
 - `SUPABASE_JWT_SECRET` — Supabase JWT secret for validating wrestler tokens
 - `FRONTEND_URL` — production frontend URL (e.g. `https://pursuit.vercel.app`); added to CORS allowed origins in `main.py`; omit for local-only dev
+- `USDA_API_KEY` — USDA FoodData Central API key (free, get at api.nal.usda.gov); used by `app/services/food.py` for meal suggestions; falls back to hardcoded meals if absent
 
 ---
 
@@ -338,6 +339,69 @@ Model: `LogisticRegression` trained on per-match rolling features (rolling win r
 
 ---
 
+### `POST /predict/meal-plan`
+**Auth:** Required  
+**Status:** Implemented
+
+**Request body:**
+```json
+{
+  "current_weight": 158.5,
+  "target_weight_class": 152,
+  "days_until_weigh_in": 7
+}
+```
+Reuses `WeightCutRequest`. `days_until_weigh_in` must be `> 0`.
+
+**Response:**
+```json
+{
+  "daily_calories": 2100,
+  "daily_macros": { "protein": 158, "carbs": 210, "fat": 58, "sodium": 1200 },
+  "sodium_target": 1500,
+  "sodium_warning": false,
+  "meals": [
+    { "meal_type": "breakfast", "name": "Oatmeal", "calories": 400, "protein": 25, "carbs": 45, "fat": 10, "sodium": 300 },
+    { "meal_type": "lunch",     "name": "Grilled Chicken Breast", "calories": 500, "protein": 40, "carbs": 50, "fat": 8, "sodium": 500 },
+    { "meal_type": "dinner",    "name": "Baked Salmon Fillet", "calories": 450, "protein": 35, "carbs": 40, "fat": 12, "sodium": 400 }
+  ]
+}
+```
+Calorie math: `base = current_weight × 15`, `deficit = (lbs_to_cut / days) × 3500`, `target = max(1200, base − deficit)`. Macros: `protein = current_weight × 1.0g`, `fat = target × 0.25 / 9`, `carbs = remaining / 4`. `sodium_warning` is `true` if combined meal sodium exceeds 1500 mg (high sodium causes water retention during a cut). Meals fetched from USDA FoodData Central via `app/services/food.py`; falls back to hardcoded meals if API is unavailable.
+
+---
+
+### `POST /predict/recovery-protocol`
+**Auth:** Required  
+**Status:** Implemented
+
+**Request body:**
+```json
+{
+  "weight_before_cut": 158.5,
+  "weight_after_cut": 152.0,
+  "hours_until_match": 4
+}
+```
+`hours_until_match` must be `> 0`.
+
+**Response:**
+```json
+{
+  "fluids_oz": 104.0,
+  "sodium_target_mg": 1500,
+  "meals": [...],
+  "timeline": [
+    { "hours_before_match": 4, "action": "Drink 16oz water with electrolytes immediately — aim for a drink containing at least 300mg sodium" },
+    { "hours_before_match": 2, "action": "Eat recovery meal — high carb, moderate protein, low fat" },
+    { "hours_before_match": 0.5, "action": "Light snack (banana, crackers). Stop drinking large amounts." }
+  ]
+}
+```
+`fluids_oz = (weight_before_cut − weight_after_cut) × 16`. Timeline has 3 steps if `hours >= 3`, 1 step (sip slowly) if `< 3`. `sodium_target_mg: 1500` — wrestlers need to replenish sodium after cutting to retain rehydration fluids. Meals fetched via same `get_meals()` function as meal-plan with recovery-appropriate macro targets.
+
+---
+
 ### `RPC: insert_lifting_workout`
 **Auth:** Required (uses `auth.uid()` internally)  
 **Status:** Implemented
@@ -518,6 +582,21 @@ All "this week" computations use the user's local timezone with `date-fns` `star
 
 ---
 
+### `/nutrition` — Nutrition
+**Status:** Built  
+**Tables:** None  
+**FastAPI:** `POST /predict/meal-plan`, `POST /predict/recovery-protocol` (both user-triggered; fail silently if unreachable)
+
+Two sections:
+
+**Cut Meal Planner:** Form takes current weight, target weight class, and days until weigh-in. On submit, calls `POST /predict/meal-plan`. Results show a daily targets row (calories, protein, carbs, fat, sodium) and three meal cards (breakfast, lunch, dinner), each showing name, macros, and sodium. If `sodium_warning` is true, an amber inline warning is shown below the targets. Fails silently with inline message "Meal suggestions unavailable right now."
+
+**Post Weigh-In Recovery:** Form takes weight before cut, weight after weigh-in, and hours until first match. On submit, calls `POST /predict/recovery-protocol`. Results show fluids target (oz), a vertical timeline of actions with T-minus labels, a sodium tip ("aim for 1500–2000mg sodium — choose electrolyte drinks and lightly salted foods"), and recovery meal cards. Fails silently with the same inline message.
+
+**React Query keys:** `['meal-plan', inputs]` and `['recovery', inputs]`, both `staleTime: 300000` (5 min — meal suggestions don't need to refresh often). Both use `retry: false`.
+
+---
+
 ## 7. Auth Rules
 
 - **Sign up:** `supabase.auth.signUp` → check `data.user.identities` (empty array = duplicate email, show error) → insert row into `wrestlers` (client-side, in `Auth.jsx`). Known race condition — see Auth page note above.
@@ -525,7 +604,7 @@ All "this week" computations use the user's local timezone with `date-fns` `star
 - **Forgot password:** `supabase.auth.resetPasswordForEmail(email, { redirectTo })` sends an email with a magic link pointing at `/reset-password`. The link contains a short-lived recovery token in the URL hash.
 - **Password reset:** `/reset-password` is a public route. It subscribes to `onAuthStateChange`, waits for the `PASSWORD_RECOVERY` event (fired when Supabase exchanges the URL token for a session), then calls `supabase.auth.updateUser({ password })` with the new password the wrestler enters.
 - **Session persistence:** `ProtectedRoute` calls `supabase.auth.getSession()` on mount and subscribes to `supabase.auth.onAuthStateChange` to detect expiry in real time. Session expiry redirects to `/auth` immediately.
-- **Protected routes:** All routes except `/auth` and `/reset-password` are wrapped in `ProtectedRoute`. `/` redirects to `/dashboard` if logged in. All new pages (`/records`, `/timeline`, `/board`, `/workouts`, `/goals`) follow the same pattern.
+- **Protected routes:** All routes except `/auth` and `/reset-password` are wrapped in `ProtectedRoute`. `/` redirects to `/dashboard` if logged in. All new pages (`/records`, `/timeline`, `/board`, `/workouts`, `/goals`, `/nutrition`) follow the same pattern.
 - **FastAPI auth:** Every endpoint uses `Depends(get_current_user)`. The dependency extracts the Bearer token from the `Authorization` header and validates it with `PyJWT` using `HS256` and audience `authenticated`. `payload["sub"]` is the wrestler's UUID used to scope all DB queries.
 - **RLS:** Supabase RLS ensures wrestlers can only read/write their own rows in `weight_logs`, `matches`, `notes`, and `schedules`. The frontend uses the anon key (RLS enforced). The backend uses the service role key (bypasses RLS intentionally — the JWT sub is used to manually scope all queries). **Exception for team features:** the `/board` page and activity feed need to read data from other wrestlers who have opted in (`show_on_board = true`). This requires additional RLS policies: (1) `wrestlers`: any authenticated user can `SELECT` rows where `show_on_board = true`; (2) `weight_logs`, `matches`, `schedules`: any authenticated user can `SELECT` rows whose `wrestler_id` references a wrestler with `show_on_board = true`.
 - **Service role key:** Only present in the FastAPI backend environment. Never sent to or accessible by the browser.

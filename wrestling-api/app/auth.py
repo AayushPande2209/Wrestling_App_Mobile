@@ -9,6 +9,11 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 bearer_scheme = HTTPBearer()
 
 SUPABASE_JWT_SECRET = os.environ["SUPABASE_JWT_SECRET"]
+SUPABASE_URL = os.environ["SUPABASE_URL"]
+JWKS_URL = f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json"
+
+# Fetch the JWKS public key once at startup
+_jwks_client = jwt.PyJWKClient(JWKS_URL)
 
 
 def get_current_user(
@@ -21,10 +26,11 @@ def get_current_user(
     """
     token = credentials.credentials
     try:
+        signing_key = _jwks_client.get_signing_key_from_jwt(token)
         payload = jwt.decode(
             token,
-            SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
+            signing_key.key,
+            algorithms=["ES256", "HS256"],
             audience="authenticated",
         )
         return payload
@@ -33,8 +39,8 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token expired",
         )
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
+            detail=f"Invalid token: {e}",
         )
