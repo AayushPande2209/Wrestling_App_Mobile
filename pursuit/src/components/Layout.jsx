@@ -7,6 +7,8 @@ const NAV = [
   { to: '/matches', label: 'MATCHES' },
   { to: '/notes', label: 'NOTES' },
   { to: '/schedule', label: 'SCHEDULE' },
+  { to: '/workouts', label: 'WORKOUTS' },
+  { to: '/goals', label: 'GOALS' },
   { to: '/records', label: 'RECORDS' },
   { to: '/timeline', label: 'TIMELINE' },
   { to: '/board', label: 'BOARD' },

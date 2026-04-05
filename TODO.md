@@ -110,5 +110,72 @@
 - [x] `Auth.jsx` — when a user tries to sign up with an email that already exists, Supabase returns a fake success (no error, but `data.user.identities` is an empty array) to prevent email enumeration. The current code falls through to the `wrestlers.insert` which silently fails or creates a confusing state. Detect the empty-identities case after `signUp` and show a clear message like "An account with this email already exists. Try signing in instead."
 - [x] `Auth.jsx` — add a "Forgot password?" link below the sign-in form that calls `supabase.auth.resetPasswordForEmail(email)` and shows a confirmation message ("Check your email for a reset link"). Also add a `/reset-password` page (or handle via Supabase's built-in redirect) that calls `supabase.auth.updateUser({ password })` when the user clicks the emailed link — needs a route in `App.jsx`, and SPEC.md §6 and §7 should document the flow
 
-_Last updated by: Reviewer — 2026-04-05 (auth improvements approved, 98 tests across 13 files)_
+## Workout & Goals — fixes before building
+
+- [x] Migration: create Postgres RPC function `insert_lifting_workout` 
+      that inserts into `workouts` and `workout_exercises` in a single 
+      transaction. The React frontend calls `supabase.rpc('insert_lifting_workout', 
+      {...})` instead of two separate inserts. This prevents orphaned 
+      workout rows if the exercises insert fails.
+
+- [x] Migration: add `completed` (boolean, default false) and 
+      `completed_at` (timestamptz, nullable) columns to `goals` table. 
+      Auto-tracked goals: when progress computation hits 100%, 
+      automatically set completed=true and completed_at=now() on the 
+      next render. Manual/other goals: wrestler taps a "Mark complete" 
+      button. Past goals section filters on target_date < now() OR 
+      completed=true, and shows a "succeeded" vs "failed" badge based 
+      on completed flag.
+
+- [x] Migration: add `goal_type` check constraint on goals table 
+      enforcing that lifting/practice/habit goals always have 
+      tracking_type='auto', and 'other' always has 
+      tracking_type='manual'. Add check constraint on progress column: 
+      progress >= 0 AND progress <= 100.
+
+- [x] Migration: normalize tournament names. Add a `tournaments` table 
+      (id, name, date, wrestler_id) and replace the free text 
+      `tournament` field in both `matches` and `goals` with a FK → 
+      tournaments.id. Frontend shows a dropdown of past tournaments 
+      when logging a match or creating a tournament_placement goal, 
+      with an "Add new" option.
+
+- [x] Frontend: all "this week" computations (lifting goals, practice 
+      goals, habit logs) must use the user's local timezone, not UTC. 
+      Use date-fns `startOfWeek` and `endOfWeek` with the user's 
+      timezone offset for all week boundary calculations. Week starts 
+      Monday. Pass these as ISO strings to Supabase queries using 
+      `.gte('created_at', weekStart).lte('created_at', weekEnd)`.
+
+- [x] Frontend: when a workout is successfully inserted on `/workouts`, 
+      call `queryClient.invalidateQueries(['goals', user.id])` in 
+      addition to `['workouts', user.id]` so goal progress updates 
+      immediately without a stale cache.
+
+- [x] Frontend: habit goals need an explicit log button on the goal 
+      card — a "Log today" button that inserts a row into `habit_logs`. 
+      Disable it if the wrestler has already logged for today 
+      (check habit_logs for an entry where logged_at >= start of 
+      today in local timezone). Show a count of logs this week vs 
+      target on the card.
+
+- [x] Frontend: add edit and delete for both workouts and goals. 
+      Workout list: delete button on each row (with confirmation). 
+      Lifting workouts: edit re-opens the table form pre-filled. 
+      Goals: delete button on each card (with confirmation). No edit 
+      on goals — delete and recreate is simpler and less error-prone.
+
+- [x] Frontend: when a lifting workout row is expanded, fetch 
+      `workout_exercises` on demand using a separate React Query call 
+      with queryKey: ['workout_exercises', workout.id]. Do not 
+      eagerly join in the list query — 15 workouts × N exercises 
+      is too heavy for the list view.
+
+- [x] Note: `workout_exercises.wrestler_id` is intentionally redundant 
+      with `workouts.wrestler_id` for RLS purposes. On the RPC 
+      function, always set both from auth.uid() to keep them in sync. 
+      Never trust the client to pass wrestler_id — always derive it 
+      server-side in the RPC function.
+
+_Last updated by: Reviewer — 2026-04-05 (workout & goals approved, 118 tests across 15 files)_
  

@@ -22,7 +22,8 @@ export default function Matches() {
   const [result, setResult] = useState('win')
   const [score, setScore] = useState('')
   const [winType, setWinType] = useState('decision')
-  const [tournament, setTournament] = useState('')
+  const [tournamentId, setTournamentId] = useState('')   // '' = none, '__new__' = add new
+  const [newTournamentName, setNewTournamentName] = useState('')
   const [matchDate, setMatchDate] = useState(new Date().toISOString().split('T')[0])
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
@@ -54,13 +55,29 @@ export default function Matches() {
     staleTime: 60_000,
   })
 
-  // Paginated match list
+  // Tournaments dropdown
+  const { data: tournaments = [] } = useQuery({
+    queryKey: ['tournaments', uid],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tournaments')
+        .select('id, name, date')
+        .eq('wrestler_id', uid)
+        .order('date', { ascending: false, nullsFirst: false })
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: !!uid,
+    staleTime: 60_000,
+  })
+
+  // Paginated match list — join tournaments for name display
   const { data: pageData, isFetching, isLoading, error } = useQuery({
     queryKey: ['matches', uid, page],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('matches')
-        .select('id, match_date, opponent_name, result, score, win_type, tournament')
+        .select('id, match_date, opponent_name, result, score, win_type, tournament, tournament_id, tournaments(name)')
         .eq('wrestler_id', uid)
         .order('match_date', { ascending: false })
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1)
@@ -88,19 +105,40 @@ export default function Matches() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
+      const uid = session.user.id
+
+      // Resolve tournament: create a new one if "Add new" was selected
+      let resolvedTournamentId = tournamentId === '' ? null : tournamentId
+      if (tournamentId === '__new__') {
+        if (!newTournamentName.trim()) {
+          setSubmitError('Enter a tournament name or select "None".')
+          setSubmitting(false)
+          return
+        }
+        const { data: tData, error: tErr } = await supabase
+          .from('tournaments')
+          .insert({ wrestler_id: uid, name: newTournamentName.trim() })
+          .select('id')
+          .single()
+        if (tErr) throw tErr
+        resolvedTournamentId = tData.id
+        queryClient.invalidateQueries({ queryKey: ['tournaments', uid] })
+      }
+
       const { error } = await supabase.from('matches').insert({
-        wrestler_id: session.user.id,
+        wrestler_id: uid,
         opponent_name: opponent,
         result,
         score: score || null,
         win_type: result === 'win' ? winType : null,
-        tournament: tournament || null,
+        tournament_id: resolvedTournamentId,
         match_date: matchDate,
       })
       if (error) throw error
       setOpponent('')
       setScore('')
-      setTournament('')
+      setTournamentId('')
+      setNewTournamentName('')
       setMatchDate(new Date().toISOString().split('T')[0])
       setPage(0)
       setAllMatches([])
@@ -221,12 +259,26 @@ export default function Matches() {
             )}
             <div>
               <label className={labelClass}>TOURNAMENT</label>
-              <input
-                value={tournament}
-                onChange={e => setTournament(e.target.value)}
+              <select
+                value={tournamentId}
+                onChange={e => { setTournamentId(e.target.value); setNewTournamentName('') }}
                 className={inputClass}
-                placeholder="Optional"
-              />
+              >
+                <option value="">— None —</option>
+                {tournaments.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+                <option value="__new__">＋ Add new…</option>
+              </select>
+              {tournamentId === '__new__' && (
+                <input
+                  type="text"
+                  value={newTournamentName}
+                  onChange={e => setNewTournamentName(e.target.value)}
+                  placeholder="Tournament name"
+                  className={`${inputClass} mt-2`}
+                />
+              )}
             </div>
             <div>
               <label className={labelClass}>DATE</label>
@@ -367,7 +419,9 @@ export default function Matches() {
                 {m.win_type ? ` · ${m.win_type.toUpperCase()}` : ''}
               </div>
               <div className="font-mono text-sm text-[#ccc]">{m.score || '—'}</div>
-              <div className="font-mono text-[11px] text-[#555]">{m.tournament || '—'}</div>
+              <div className="font-mono text-[11px] text-[#555]">
+                {m.tournaments?.name ?? m.tournament ?? '—'}
+              </div>
             </div>
           ))
         )}

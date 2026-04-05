@@ -13,6 +13,8 @@
 **MVP scope:**
 - Each wrestler has a private account. No coach view, no team-wide data (except opt-in features below).
 - Log weight daily, track matches and notes, manage a personal schedule.
+- Log lifting workouts with per-exercise tracking (sets, reps, weight).
+- Set and track goals — auto-tracked (lifting count, practice attendance, daily habits) and manual (tournament placement, other).
 - Two ML predictions: weight cut safety analysis and match outcome probability.
 - Personal records, season timeline, and streak tracking for progress visibility.
 - Opt-in team weight board and teammate activity feed — wrestlers choose to share via `show_on_board` toggle; default is private.
@@ -49,9 +51,10 @@
 Browser (React)
     │
     ├── Supabase JS client ──────────────────► Supabase (all CRUD)
-    │   - direct table reads/writes                 wrestlers, weight_logs,
-    │   - auth (signUp, signIn, signOut)             matches, notes, schedules
-    │   - JWT issued on login
+    │   - direct table reads/writes                 wrestlers, weight_logs, matches,
+    │   - auth (signUp, signIn, signOut)             notes, schedules, tournaments,
+    │   - RPC (insert_lifting_workout)               workouts, workout_exercises,
+    │   - JWT issued on login                        goals, habit_logs
     │
     └── fetch() with Bearer token ──────────► FastAPI (ML only)
                                                 POST /predict/weight-cut
@@ -109,11 +112,11 @@ Browser (React)
 | `result` | `text` | `'win'` \| `'loss'` \| `'draw'` |
 | `score` | `text` | nullable (e.g. `"8-2"`) |
 | `win_type` | `text` | nullable; `'decision'` \| `'major'` \| `'tech'` \| `'pin'` \| `'forfeit'` |
-| `tournament` | `text` | nullable |
-| `match_date` | `date` | — |
+| `tournament_id` | `uuid` | nullable, FK → `tournaments(id)`, on delete set null |
+| `match_date` | `date` | NOT NULL |
 | `created_at` | `timestamptz` | default `now()` |
 
-**Note:** `match_date` is the actual date of the match (user-entered). `created_at` is the row insertion time. All ordering and ML queries use `match_date`.
+**Note:** `match_date` is the actual date of the match (user-entered). `created_at` is the row insertion time. All ordering and ML queries use `match_date`. The `tournament_id` FK replaced the old free-text `tournament` column; existing rows may still have a legacy `tournament` text value (the frontend falls back to it for display).
 
 **RLS:** Wrestlers can only select/insert rows where `wrestler_id = auth.uid()`.
 
@@ -145,6 +148,91 @@ Browser (React)
 | `location` | `text` | nullable |
 
 **RLS:** Wrestlers can only select/insert/update rows where `wrestler_id = auth.uid()`.
+
+---
+
+### `tournaments`
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | `uuid` | PK, default `gen_random_uuid()` |
+| `wrestler_id` | `uuid` | FK → `wrestlers(id)`, NOT NULL |
+| `name` | `text` | NOT NULL |
+| `date` | `date` | nullable |
+
+**RLS:** Wrestlers can only select/insert/delete their own rows (`wrestler_id = auth.uid()`).
+
+Used as a normalized lookup for both `matches.tournament_id` and `goals.tournament_id`. The frontend shows a dropdown of existing tournaments plus an "Add new" option when logging a match or creating a tournament placement goal.
+
+---
+
+### `workouts`
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | `uuid` | PK, default `gen_random_uuid()` |
+| `wrestler_id` | `uuid` | FK → `wrestlers(id)`, NOT NULL |
+| `workout_date` | `date` | NOT NULL |
+| `notes` | `text` | nullable |
+| `created_at` | `timestamptz` | default `now()` |
+
+**RLS:** Wrestlers can select/insert/update/delete their own rows (`wrestler_id = auth.uid()`).
+
+---
+
+### `workout_exercises`
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | `uuid` | PK, default `gen_random_uuid()` |
+| `workout_id` | `uuid` | FK → `workouts(id)`, on delete cascade, NOT NULL |
+| `wrestler_id` | `uuid` | FK → `wrestlers(id)`, NOT NULL |
+| `name` | `text` | NOT NULL |
+| `sets` | `int` | nullable |
+| `reps` | `int` | nullable |
+| `weight` | `float` | nullable (lbs) |
+| `created_at` | `timestamptz` | default `now()` |
+
+**RLS:** Wrestlers can select/insert/delete their own rows (`wrestler_id = auth.uid()`).
+
+**Note:** `wrestler_id` is intentionally redundant with `workouts.wrestler_id` — Supabase RLS cannot join through parent tables, so both tables need the FK for policy checks. The `insert_lifting_workout` RPC derives both from `auth.uid()`.
+
+---
+
+### `goals`
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | `uuid` | PK, default `gen_random_uuid()` |
+| `wrestler_id` | `uuid` | FK → `wrestlers(id)`, NOT NULL |
+| `goal_type` | `text` | NOT NULL; `'lifting'` \| `'practice'` \| `'habit'` \| `'tournament_placement'` \| `'other'` |
+| `tracking_type` | `text` | NOT NULL; `'auto'` \| `'manual'` |
+| `description` | `text` | NOT NULL |
+| `target` | `int` | nullable (weekly count for auto goals) |
+| `progress` | `int` | default `0`; check `>= 0 AND <= 100` |
+| `target_date` | `date` | nullable |
+| `tournament_id` | `uuid` | nullable, FK → `tournaments(id)`, on delete set null |
+| `completed` | `boolean` | default `false` |
+| `completed_at` | `timestamptz` | nullable |
+| `created_at` | `timestamptz` | default `now()` |
+
+**Check constraints:**
+- `goal_type` must be one of the five allowed values
+- `tracking_type` must be `'auto'` or `'manual'`
+- `progress >= 0 AND progress <= 100`
+- Compound: lifting/practice/habit → `tracking_type = 'auto'`; tournament_placement/other → `tracking_type = 'manual'`
+
+**RLS:** Wrestlers can select/insert/update/delete their own rows (`wrestler_id = auth.uid()`).
+
+---
+
+### `habit_logs`
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | `uuid` | PK, default `gen_random_uuid()` |
+| `goal_id` | `uuid` | FK → `goals(id)`, on delete cascade, NOT NULL |
+| `wrestler_id` | `uuid` | FK → `wrestlers(id)`, NOT NULL |
+| `logged_at` | `timestamptz` | default `now()` |
+
+**RLS:** Wrestlers can select/insert/delete their own rows (`wrestler_id = auth.uid()`).
+
+Used to track daily habit completion. The frontend prevents logging more than once per day (client-side check: `logged_at >= start of today` in local timezone).
 
 ---
 
@@ -250,6 +338,29 @@ Model: `LogisticRegression` trained on per-match rolling features (rolling win r
 
 ---
 
+### `RPC: insert_lifting_workout`
+**Auth:** Required (uses `auth.uid()` internally)  
+**Status:** Implemented
+
+A Postgres function (`security definer`) that inserts a workout and its exercises in a single transaction. Prevents orphaned workout rows if the exercise insert fails.
+
+**Parameters:**
+```json
+{
+  "p_workout_date": "2026-04-05",
+  "p_notes": "optional text",
+  "p_exercises": [{"name": "Squat", "sets": 5, "reps": 3, "weight": 225}]
+}
+```
+
+**Returns:** `uuid` — the new workout's ID.
+
+**Behavior:** Inserts one row into `workouts`, then loops `p_exercises` and inserts one row per element into `workout_exercises`. Both `workouts.wrestler_id` and `workout_exercises.wrestler_id` are derived from `auth.uid()` — never from client input.
+
+Called from the frontend via `supabase.rpc('insert_lifting_workout', {...})`. Only used for new workout creation; edits use direct update + delete/re-insert (non-transactional, acceptable trade-off per TODO).
+
+---
+
 ## 6. Pages
 
 ### `/auth` — Auth
@@ -299,7 +410,7 @@ Three panels: log weight form (weight + optional note), cut predictor form (targ
 **Tables:** `matches` (read all, insert)  
 **FastAPI:** `POST /predict/match-outcome` (match outcome predictor form, user-triggered; fails silently if unreachable)
 
-W–L record shown at top. Add match form: opponent name, result (win/loss/draw), score (text), win type (decision/major/tech/pin/forfeit — only shown when result = win), tournament (optional), date. Match outcome predictor form: enter weight on day + target class → win probability, confidence, factors. Shows a hint when fewer than 10 matches are logged (cold-start). Match list ordered by `match_date` descending.
+W–L record shown at top. Add match form: opponent name, result (win/loss/draw), score (text), win type (decision/major/tech/pin/forfeit — only shown when result = win), tournament (dropdown of existing tournaments from `tournaments` table, with "Add new" option that creates a new tournament inline; optional), date. Match outcome predictor form: enter weight on day + target class → win probability, confidence, factors. Shows a hint when fewer than 10 matches are logged (cold-start). Match list ordered by `match_date` descending; tournament name displayed via join to `tournaments` table (falls back to legacy `tournament` text for old rows).
 
 ---
 
@@ -359,6 +470,54 @@ Public-within-the-club leaderboard showing all wrestlers who have opted in via t
 
 ---
 
+### `/workouts` — Workouts
+**Status:** Built  
+**Tables:** `workouts` (read, insert, update, delete), `workout_exercises` (read, insert, delete)  
+**FastAPI:** None  
+**RPC:** `insert_lifting_workout` (new workout creation)
+
+Lifting workout logger. The form has a workout date, optional notes field, and a dynamic exercise table with columns: exercise name (text), weight (lbs), sets, reps. An "Add row" button appends a new empty row; each row has a remove button. Minimum 1 exercise required to submit.
+
+**New workout:** Calls `insert_lifting_workout` RPC for atomic insert (workout + all exercises in a single transaction). **Edit workout:** Re-opens the form pre-filled with existing data. Updates the workout row directly, then deletes all existing exercises and re-inserts new ones (3 separate calls — non-transactional, acceptable trade-off). **Delete:** Confirmation dialog, then deletes the workout row (exercises cascade).
+
+Below the form: paginated list of past workouts (15 per page), ordered by `workout_date` descending. Each row shows date, exercise count, and notes preview. Clicking a row expands it to show full exercise details — exercises are fetched on demand via a separate React Query call (`queryKey: ['workout_exercises', workout.id]`, `staleTime: 60000`) to avoid loading N exercises × 15 workouts eagerly.
+
+**Cache invalidation:** After any create/edit/delete, invalidates both `['workouts', uid]` and `['goals', uid]` (since lifting goals depend on workout count).
+
+---
+
+### `/goals` — Goals
+**Status:** Built  
+**Tables:** `goals` (read, insert, update, delete), `tournaments` (read for dropdown), `workouts` (read for lifting progress), `schedules` (read for practice progress), `habit_logs` (read/insert for habit progress)  
+**FastAPI:** None
+
+Goal tracker with auto and manual progress modes.
+
+**Create form:** Goal type dropdown (`lifting (auto)`, `practice attendance (auto)`, `daily habit (auto)`, `tournament placement (manual)`, `other (manual)`), description (text), target (number — shown only for auto types; represents weekly count), target date, tournament dropdown (shown only for `tournament_placement` type — reads from `tournaments` table).
+
+**Progress computation per goal type (all live, never stored for auto types):**
+- **lifting:** Count of `workouts` this week ÷ target × 100
+- **practice:** Count of `schedules` with `event_type = 'practice'` this week ÷ target × 100
+- **habit:** Count of `habit_logs` this week for this goal ÷ target × 100
+- **tournament_placement:** Manual — stored `progress` value; wrestler clicks "Mark complete"
+- **other:** Manual — stored `progress` value; wrestler clicks "Mark complete"
+
+All "this week" computations use the user's local timezone with `date-fns` `startOfWeek` / `endOfWeek` (week starts Monday). Boundaries are passed as ISO strings to Supabase `.gte()` / `.lte()` filters.
+
+**Auto-completion:** When a computed progress reaches 100%, a `useEffect` writes `completed = true` and `completed_at = now()` to the goal row. This is a one-way latch — once completed, it never reverts even if progress later drops below 100%. The guard `if (!goal.completed)` prevents repeated writes on re-renders.
+
+**Manual completion:** Tournament placement and other goals show a "Mark complete" button. Clicking it sets `completed = true`, `completed_at = now()`, and `progress = 100`.
+
+**Habit logging:** Habit goal cards show a "Log today" button that inserts a row into `habit_logs`. The button is disabled if the wrestler has already logged today (`logged_at >= start of today` in local timezone). The card displays logs this week vs target.
+
+**Display:** Active goals shown as cards with a progress bar, current vs target, and days remaining. Goals past their `target_date` or with `completed = true` move to a collapsed "Past Goals" section, showing a "succeeded" (completed) or "expired" (not completed) badge.
+
+**Delete:** Confirmation dialog on each goal card. No edit — delete and recreate is simpler.
+
+**React Query keys:** `['goals', uid]` (staleTime: 30s), `['tournaments', uid]` (60s), `['workouts-week', uid, weekStartDate]` (30s), `['practices-week', uid, weekStartISO]` (30s), `['habit-logs-week', uid, weekStartISO]` (10s).
+
+---
+
 ## 7. Auth Rules
 
 - **Sign up:** `supabase.auth.signUp` → check `data.user.identities` (empty array = duplicate email, show error) → insert row into `wrestlers` (client-side, in `Auth.jsx`). Known race condition — see Auth page note above.
@@ -366,7 +525,7 @@ Public-within-the-club leaderboard showing all wrestlers who have opted in via t
 - **Forgot password:** `supabase.auth.resetPasswordForEmail(email, { redirectTo })` sends an email with a magic link pointing at `/reset-password`. The link contains a short-lived recovery token in the URL hash.
 - **Password reset:** `/reset-password` is a public route. It subscribes to `onAuthStateChange`, waits for the `PASSWORD_RECOVERY` event (fired when Supabase exchanges the URL token for a session), then calls `supabase.auth.updateUser({ password })` with the new password the wrestler enters.
 - **Session persistence:** `ProtectedRoute` calls `supabase.auth.getSession()` on mount and subscribes to `supabase.auth.onAuthStateChange` to detect expiry in real time. Session expiry redirects to `/auth` immediately.
-- **Protected routes:** All routes except `/auth` and `/reset-password` are wrapped in `ProtectedRoute`. `/` redirects to `/dashboard` if logged in. All new pages (`/records`, `/timeline`, `/board`) follow the same pattern.
+- **Protected routes:** All routes except `/auth` and `/reset-password` are wrapped in `ProtectedRoute`. `/` redirects to `/dashboard` if logged in. All new pages (`/records`, `/timeline`, `/board`, `/workouts`, `/goals`) follow the same pattern.
 - **FastAPI auth:** Every endpoint uses `Depends(get_current_user)`. The dependency extracts the Bearer token from the `Authorization` header and validates it with `PyJWT` using `HS256` and audience `authenticated`. `payload["sub"]` is the wrestler's UUID used to scope all DB queries.
 - **RLS:** Supabase RLS ensures wrestlers can only read/write their own rows in `weight_logs`, `matches`, `notes`, and `schedules`. The frontend uses the anon key (RLS enforced). The backend uses the service role key (bypasses RLS intentionally — the JWT sub is used to manually scope all queries). **Exception for team features:** the `/board` page and activity feed need to read data from other wrestlers who have opted in (`show_on_board = true`). This requires additional RLS policies: (1) `wrestlers`: any authenticated user can `SELECT` rows where `show_on_board = true`; (2) `weight_logs`, `matches`, `schedules`: any authenticated user can `SELECT` rows whose `wrestler_id` references a wrestler with `show_on_board = true`.
 - **Service role key:** Only present in the FastAPI backend environment. Never sent to or accessible by the browser.

@@ -6,6 +6,8 @@ import WeightLog from './pages/WeightLog'
 import Matches from './pages/Matches'
 import Notes from './pages/Notes'
 import Schedule from './pages/Schedule'
+import Workouts from './pages/Workouts'
+import Goals from './pages/Goals'
 import Profile from './pages/Profile'
 import Records from './pages/Records'
 import Timeline from './pages/Timeline'
@@ -64,6 +66,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Layout><Schedule /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/workouts"
+          element={
+            <ProtectedRoute>
+              <Layout><Workouts /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/goals"
+          element={
+            <ProtectedRoute>
+              <Layout><Goals /></Layout>
             </ProtectedRoute>
           }
         />

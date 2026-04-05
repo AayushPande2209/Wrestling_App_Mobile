@@ -47,6 +47,8 @@ describe('Layout', () => {
     expect(screen.getByText('MATCHES')).toBeInTheDocument()
     expect(screen.getByText('NOTES')).toBeInTheDocument()
     expect(screen.getByText('SCHEDULE')).toBeInTheDocument()
+    expect(screen.getByText('WORKOUTS')).toBeInTheDocument()
+    expect(screen.getByText('GOALS')).toBeInTheDocument()
     expect(screen.getByText('RECORDS')).toBeInTheDocument()
     expect(screen.getByText('TIMELINE')).toBeInTheDocument()
     expect(screen.getByText('BOARD')).toBeInTheDocument()
@@ -61,6 +63,8 @@ describe('Layout', () => {
       { label: 'MATCHES', href: '/matches' },
       { label: 'NOTES', href: '/notes' },
       { label: 'SCHEDULE', href: '/schedule' },
+      { label: 'WORKOUTS', href: '/workouts' },
+      { label: 'GOALS', href: '/goals' },
       { label: 'RECORDS', href: '/records' },
       { label: 'TIMELINE', href: '/timeline' },
       { label: 'BOARD', href: '/board' },
