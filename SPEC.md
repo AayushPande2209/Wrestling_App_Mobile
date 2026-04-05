@@ -259,7 +259,20 @@ Model: `LogisticRegression` trained on per-match rolling features (rolling win r
 
 Toggle between sign-in and sign-up. Email + password only. On sign-up: calls `supabase.auth.signUp` then inserts a row into `wrestlers` with `id = user.id`, `email = email`, and `name = null`. On success, redirects to `/dashboard`.
 
+**Duplicate email detection:** Supabase returns a fake-success response (no error, `data.user.identities` is an empty array) when signing up with an already-registered email to prevent enumeration. Auth.jsx checks for this case and displays: "An account with this email already exists. Try signing in instead."
+
+**Forgot password:** A "Forgot password?" link on the sign-in tab switches to a reset-request form. On submit, calls `supabase.auth.resetPasswordForEmail(email, { redirectTo: origin + '/reset-password' })` and shows "Check your email for a reset link." The emailed link redirects to `/reset-password`.
+
 > **Known issue:** Race condition — if the `wrestlers` insert fails after a successful `auth.signUp`, the user exists in auth but has no wrestlers row. Mitigation: backfill with `insert into wrestlers (id, name) select id, email from auth.users on conflict (id) do nothing`. Permanent fix: add a Supabase database trigger on `auth.users` insert.
+
+---
+
+### `/reset-password` — Reset Password
+**Status:** Built  
+**Tables:** None  
+**FastAPI:** None
+
+Public route (not wrapped in ProtectedRoute). Landed on from the emailed password-reset link, which appends a recovery token to the URL hash. Supabase SDK processes the hash automatically and fires the `PASSWORD_RECOVERY` auth event; the page listens for this event via `onAuthStateChange` and shows the new-password form once the temporary session is live. On submit, calls `supabase.auth.updateUser({ password })`. On success, navigates to `/dashboard`.
 
 ---
 
@@ -348,9 +361,12 @@ Public-within-the-club leaderboard showing all wrestlers who have opted in via t
 
 ## 7. Auth Rules
 
-- **Sign up:** `supabase.auth.signUp` → insert row into `wrestlers` (client-side, in `Auth.jsx`). Known race condition — see Auth page note above.
+- **Sign up:** `supabase.auth.signUp` → check `data.user.identities` (empty array = duplicate email, show error) → insert row into `wrestlers` (client-side, in `Auth.jsx`). Known race condition — see Auth page note above.
+- **Duplicate email:** Supabase prevents enumeration by returning a fake success. `Auth.jsx` detects the empty-identities case and surfaces a user-readable error before attempting the wrestlers insert.
+- **Forgot password:** `supabase.auth.resetPasswordForEmail(email, { redirectTo })` sends an email with a magic link pointing at `/reset-password`. The link contains a short-lived recovery token in the URL hash.
+- **Password reset:** `/reset-password` is a public route. It subscribes to `onAuthStateChange`, waits for the `PASSWORD_RECOVERY` event (fired when Supabase exchanges the URL token for a session), then calls `supabase.auth.updateUser({ password })` with the new password the wrestler enters.
 - **Session persistence:** `ProtectedRoute` calls `supabase.auth.getSession()` on mount and subscribes to `supabase.auth.onAuthStateChange` to detect expiry in real time. Session expiry redirects to `/auth` immediately.
-- **Protected routes:** All routes except `/auth` are wrapped in `ProtectedRoute`. `/` redirects to `/dashboard` if logged in. All new pages (`/records`, `/timeline`, `/board`) follow the same pattern.
+- **Protected routes:** All routes except `/auth` and `/reset-password` are wrapped in `ProtectedRoute`. `/` redirects to `/dashboard` if logged in. All new pages (`/records`, `/timeline`, `/board`) follow the same pattern.
 - **FastAPI auth:** Every endpoint uses `Depends(get_current_user)`. The dependency extracts the Bearer token from the `Authorization` header and validates it with `PyJWT` using `HS256` and audience `authenticated`. `payload["sub"]` is the wrestler's UUID used to scope all DB queries.
 - **RLS:** Supabase RLS ensures wrestlers can only read/write their own rows in `weight_logs`, `matches`, `notes`, and `schedules`. The frontend uses the anon key (RLS enforced). The backend uses the service role key (bypasses RLS intentionally — the JWT sub is used to manually scope all queries). **Exception for team features:** the `/board` page and activity feed need to read data from other wrestlers who have opted in (`show_on_board = true`). This requires additional RLS policies: (1) `wrestlers`: any authenticated user can `SELECT` rows where `show_on_board = true`; (2) `weight_logs`, `matches`, `schedules`: any authenticated user can `SELECT` rows whose `wrestler_id` references a wrestler with `show_on_board = true`.
 - **Service role key:** Only present in the FastAPI backend environment. Never sent to or accessible by the browser.

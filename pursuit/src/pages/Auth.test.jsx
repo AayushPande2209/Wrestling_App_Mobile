@@ -15,12 +15,14 @@ vi.mock('react-router-dom', async () => {
 const mockSignUp = vi.fn()
 const mockSignIn = vi.fn()
 const mockInsert = vi.fn()
+const mockResetPassword = vi.fn()
 
 vi.mock('../lib/supabase', () => ({
   supabase: {
     auth: {
       signUp: (...args) => mockSignUp(...args),
       signInWithPassword: (...args) => mockSignIn(...args),
+      resetPasswordForEmail: (...args) => mockResetPassword(...args),
     },
     from: () => ({
       insert: (payload) => {
@@ -33,8 +35,12 @@ vi.mock('../lib/supabase', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockSignUp.mockResolvedValue({ data: { user: { id: 'new-uid' } }, error: null })
+  mockSignUp.mockResolvedValue({
+    data: { user: { id: 'new-uid', identities: [{ id: 'id-1' }] } },
+    error: null,
+  })
   mockSignIn.mockResolvedValue({ data: {}, error: null })
+  mockResetPassword.mockResolvedValue({ error: null })
 })
 
 function renderAuth() {
@@ -154,6 +160,107 @@ describe('Auth', () => {
     await waitFor(() => {
       expect(getSubmitButton()).toBeDisabled()
       expect(getSubmitButton().textContent).toBe('LOADING...')
+    })
+  })
+
+  it('duplicate email — shows error when identities is empty', async () => {
+    mockSignUp.mockResolvedValueOnce({
+      data: { user: { id: 'fake-uid', identities: [] } },
+      error: null,
+    })
+    const user = userEvent.setup()
+    renderAuth()
+
+    await user.click(screen.getByRole('button', { name: /^sign up$/i }))
+    await user.type(screen.getByPlaceholderText('wrestler@team.edu'), 'existing@team.edu')
+    await user.type(getPasswordInput(), 'password123')
+    await user.click(getSubmitButton())
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/An account with this email already exists/)
+      ).toBeInTheDocument()
+    })
+    // Should not insert wrestler row or navigate
+    expect(mockInsert).not.toHaveBeenCalled()
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it('forgot password — link appears on sign-in tab only', async () => {
+    const user = userEvent.setup()
+    renderAuth()
+
+    // Visible on sign-in tab
+    expect(screen.getByText('Forgot password?')).toBeInTheDocument()
+
+    // Switch to sign-up tab — link should disappear
+    await user.click(screen.getByRole('button', { name: /^sign up$/i }))
+    expect(screen.queryByText('Forgot password?')).not.toBeInTheDocument()
+  })
+
+  it('forgot password — shows reset form and hides tabs', async () => {
+    const user = userEvent.setup()
+    renderAuth()
+
+    await user.click(screen.getByText('Forgot password?'))
+
+    // Tabs should be hidden
+    expect(screen.queryByRole('button', { name: /^sign in$/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^sign up$/i })).not.toBeInTheDocument()
+
+    // Reset UI visible
+    expect(screen.getByText('RESET PASSWORD')).toBeInTheDocument()
+    expect(screen.getByText(/BACK TO SIGN IN/)).toBeInTheDocument()
+    expect(getSubmitButton().textContent).toBe('SEND RESET LINK')
+
+    // Password field hidden
+    expect(getPasswordInput()).toBeNull()
+  })
+
+  it('forgot password — sends reset email and shows confirmation', async () => {
+    const user = userEvent.setup()
+    renderAuth()
+
+    await user.click(screen.getByText('Forgot password?'))
+    await user.type(screen.getByPlaceholderText('wrestler@team.edu'), 'me@team.edu')
+    await user.click(getSubmitButton())
+
+    await waitFor(() => {
+      expect(mockResetPassword).toHaveBeenCalledWith('me@team.edu', {
+        redirectTo: expect.stringContaining('/reset-password'),
+      })
+      expect(screen.getByText('Check your email for a reset link.')).toBeInTheDocument()
+    })
+    // Submit button should be replaced by confirmation
+    expect(getSubmitButton()).toBeNull()
+  })
+
+  it('forgot password — back to sign in restores login form', async () => {
+    const user = userEvent.setup()
+    renderAuth()
+
+    await user.click(screen.getByText('Forgot password?'))
+    expect(screen.getByText('RESET PASSWORD')).toBeInTheDocument()
+
+    await user.click(screen.getByText(/BACK TO SIGN IN/))
+
+    // Tabs visible again — "SIGN IN" appears as both tab and submit button
+    expect(screen.getAllByRole('button', { name: /^sign in$/i }).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByRole('button', { name: /^sign up$/i })).toBeInTheDocument()
+    expect(getSubmitButton().textContent).toBe('SIGN IN')
+  })
+
+  it('forgot password — shows error on failure', async () => {
+    mockResetPassword.mockResolvedValueOnce({ error: { message: 'Rate limit exceeded' } })
+    const user = userEvent.setup()
+    renderAuth()
+
+    await user.click(screen.getByText('Forgot password?'))
+    await user.type(screen.getByPlaceholderText('wrestler@team.edu'), 'me@team.edu')
+    await user.click(getSubmitButton())
+
+    await waitFor(() => {
+      expect(screen.getByText('Rate limit exceeded')).toBeInTheDocument()
     })
   })
 })

@@ -3,12 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 export default function Auth() {
-  const [mode, setMode] = useState('login')
+  const [mode, setMode] = useState('login') // 'login' | 'signup' | 'forgot'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [forgotSent, setForgotSent] = useState(false)
   const navigate = useNavigate()
+
+  function switchMode(next) {
+    setMode(next)
+    setError(null)
+    setForgotSent(false)
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -18,14 +25,26 @@ export default function Auth() {
       if (mode === 'signup') {
         const { data, error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
+        // Supabase returns a fake success for existing emails to prevent enumeration;
+        // identities is empty when the email is already registered.
+        if (data.user?.identities?.length === 0) {
+          throw new Error('An account with this email already exists. Try signing in instead.')
+        }
         if (data.user) {
           await supabase.from('wrestlers').insert({ id: data.user.id, email, name: null })
         }
+        navigate('/dashboard')
+      } else if (mode === 'forgot') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        })
+        if (error) throw error
+        setForgotSent(true)
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
+        navigate('/dashboard')
       }
-      navigate('/dashboard')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -48,28 +67,48 @@ export default function Auth() {
 
         {/* Card */}
         <div className="border border-[#1a1a1a] bg-[#0a0a0a]">
-          {/* Tabs */}
-          <div className="flex border-b border-[#1a1a1a]">
-            {[
-              { key: 'login', label: 'SIGN IN' },
-              { key: 'signup', label: 'SIGN UP' },
-            ].map(({ key, label }) => (
+          {/* Tabs — hidden in forgot mode */}
+          {mode !== 'forgot' && (
+            <div className="flex border-b border-[#1a1a1a]">
+              {[
+                { key: 'login', label: 'SIGN IN' },
+                { key: 'signup', label: 'SIGN UP' },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => switchMode(key)}
+                  className={`flex-1 py-3 text-[10px] tracking-[0.2em] font-display font-medium transition-colors ${
+                    mode === key
+                      ? 'text-[#d97706] border-b-2 border-[#d97706] -mb-px'
+                      : 'text-[#444] hover:text-[#aaa]'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Forgot password header */}
+          {mode === 'forgot' && (
+            <div className="flex items-center gap-3 px-7 pt-6 pb-0">
               <button
-                key={key}
-                onClick={() => { setMode(key); setError(null) }}
-                className={`flex-1 py-3 text-[10px] tracking-[0.2em] font-display font-medium transition-colors ${
-                  mode === key
-                    ? 'text-[#d97706] border-b-2 border-[#d97706] -mb-px'
-                    : 'text-[#444] hover:text-[#aaa]'
-                }`}
+                onClick={() => switchMode('login')}
+                className="font-mono text-[10px] text-[#444] hover:text-[#aaa] tracking-[0.1em] transition-colors"
               >
-                {label}
+                ← BACK TO SIGN IN
               </button>
-            ))}
-          </div>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-7 space-y-4">
+            {mode === 'forgot' && (
+              <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706]">
+                RESET PASSWORD
+              </div>
+            )}
+
             <div>
               <label className="block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2">
                 EMAIL
@@ -84,19 +123,22 @@ export default function Auth() {
                 placeholder="wrestler@team.edu"
               />
             </div>
-            <div>
-              <label className="block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2">
-                PASSWORD
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                className="w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors"
-              />
-            </div>
+
+            {mode !== 'forgot' && (
+              <div>
+                <label className="block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2">
+                  PASSWORD
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                  className="w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors"
+                />
+              </div>
+            )}
 
             {error && (
               <p className="text-[11px] font-mono text-red-400 border border-red-900/50 bg-red-950/20 px-3 py-2">
@@ -104,13 +146,38 @@ export default function Auth() {
               </p>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] py-3 mt-1 hover:bg-[#b45309] transition-colors disabled:opacity-40"
-            >
-              {loading ? 'LOADING...' : mode === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT'}
-            </button>
+            {forgotSent ? (
+              <p className="text-[11px] font-mono text-green-500 border border-green-900/50 bg-green-950/20 px-3 py-2">
+                Check your email for a reset link.
+              </p>
+            ) : (
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] py-3 mt-1 hover:bg-[#b45309] transition-colors disabled:opacity-40"
+              >
+                {loading
+                  ? 'LOADING...'
+                  : mode === 'login'
+                  ? 'SIGN IN'
+                  : mode === 'signup'
+                  ? 'CREATE ACCOUNT'
+                  : 'SEND RESET LINK'}
+              </button>
+            )}
+
+            {/* Forgot password link — only shown on sign-in tab */}
+            {mode === 'login' && !forgotSent && (
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => switchMode('forgot')}
+                  className="font-mono text-[10px] text-[#333] hover:text-[#888] tracking-[0.1em] transition-colors"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>

@@ -107,5 +107,8 @@
 - [x] `Records.jsx` — score parsing assumes exact `"A-B"` format (`score.split('-')`); scores with whitespace like `"8 - 2"` or trailing text like `"8-2 OT"` are silently skipped — should trim parts and handle common variations
 - [x] `Dashboard.jsx` — activity feed sorts items by `b.ts.localeCompare(a.ts)` but match feed items use `m.match_date` as their `ts` (a `date` like `"2026-04-04"`) while weight/schedule items use full ISO timestamps — `localeCompare` still works for ordering but mixing date-only and datetime strings may produce incorrect interleaving within the same day
 
-_Last updated by: Reviewer — 2026-04-04 (time_of_day weight logging approved, 87 tests across 12 files)_
+- [x] `Auth.jsx` — when a user tries to sign up with an email that already exists, Supabase returns a fake success (no error, but `data.user.identities` is an empty array) to prevent email enumeration. The current code falls through to the `wrestlers.insert` which silently fails or creates a confusing state. Detect the empty-identities case after `signUp` and show a clear message like "An account with this email already exists. Try signing in instead."
+- [x] `Auth.jsx` — add a "Forgot password?" link below the sign-in form that calls `supabase.auth.resetPasswordForEmail(email)` and shows a confirmation message ("Check your email for a reset link"). Also add a `/reset-password` page (or handle via Supabase's built-in redirect) that calls `supabase.auth.updateUser({ password })` when the user clicks the emailed link — needs a route in `App.jsx`, and SPEC.md §6 and §7 should document the flow
+
+_Last updated by: Reviewer — 2026-04-05 (auth improvements approved, 98 tests across 13 files)_
  

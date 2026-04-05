@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Auth from './pages/Auth'
+import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import WeightLog from './pages/WeightLog'
 import Matches from './pages/Matches'
@@ -17,6 +18,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/auth" element={<Auth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route
           path="/"
           element={
