@@ -34,7 +34,7 @@ function CustomTooltip({ active, payload }) {
   if (!d) return null
   return (
     <div className="bg-[#0a0a0a] border border-[#1e1e1e] px-3 py-2 font-mono text-[11px] text-[#f0f0f0]">
-      <div className="text-[#555] mb-1">{d.label}</div>
+      <div className="text-[#aaa] mb-1">{d.label}</div>
       {d.weight != null && <div>{d.weight} LBS</div>}
       {d.result && (
         <div style={{ color: RESULT_COLOR[d.result] }}>
@@ -86,7 +86,7 @@ export default function Timeline() {
   })
 
   if (wLoading || mLoading) {
-    return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
+    return <div className="font-mono text-[#888] text-xs tracking-[0.3em]">LOADING...</div>
   }
 
   const loadError = wError || mError
@@ -158,15 +158,15 @@ export default function Timeline() {
           <div className="flex items-center gap-6 mb-6">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-[#22c55e]" />
-              <span className="font-mono text-[10px] text-[#555]">WIN</span>
+              <span className="font-mono text-[10px] text-[#aaa]">WIN</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-[#ef4444]" />
-              <span className="font-mono text-[10px] text-[#555]">LOSS</span>
+              <span className="font-mono text-[10px] text-[#aaa]">LOSS</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-[#555]" />
-              <span className="font-mono text-[10px] text-[#555]">DRAW</span>
+              <span className="font-mono text-[10px] text-[#aaa]">DRAW</span>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
@@ -223,7 +223,7 @@ export default function Timeline() {
                   {m.result.toUpperCase()}
                 </span>
                 <span className="text-[#888]">vs {m.opponent_name}</span>
-                {m.score && <span className="text-[#444]">{m.score}</span>}
+                {m.score && <span className="text-[#888]">{m.score}</span>}
               </div>
             ))}
           </div>

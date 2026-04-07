@@ -9,12 +9,12 @@ const TYPE_COLOR = {
   practice: 'text-blue-400',
   tournament: 'text-[#d97706]',
   'dual meet': 'text-green-400',
-  other: 'text-[#555]',
+  other: 'text-[#aaa]',
 }
 
 const inputClass =
   'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
-const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
+const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2'
 
 function EventRow({ event, muted }) {
   return (
@@ -24,7 +24,7 @@ function EventRow({ event, muted }) {
       }`}
     >
       <div className="w-24 shrink-0">
-        <div className="font-mono text-[11px] text-[#555]">
+        <div className="font-mono text-[11px] text-[#aaa]">
           {new Date(event.starts_at)
             .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
             .toUpperCase()}
@@ -41,7 +41,7 @@ function EventRow({ event, muted }) {
           {event.title}
         </div>
         {event.location && (
-          <div className="font-mono text-[11px] text-[#444] mt-0.5">{event.location}</div>
+          <div className="font-mono text-[11px] text-[#888] mt-0.5">{event.location}</div>
         )}
       </div>
       <div className={`text-[10px] font-display tracking-[0.12em] shrink-0 ${TYPE_COLOR[event.event_type] ?? TYPE_COLOR.other}`}>
@@ -184,7 +184,7 @@ export default function Schedule() {
   const initialLoading = (upcomingLoading || pastLoading) && upcomingPage === 0 && pastPage === 0
 
   if (initialLoading) {
-    return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
+    return <div className="font-mono text-[#888] text-xs tracking-[0.3em]">LOADING...</div>
   }
 
   return (
@@ -284,7 +284,7 @@ export default function Schedule() {
                   <button
                     onClick={() => setUpcomingPage(p => p + 1)}
                     disabled={upcomingFetching}
-                    className="px-6 py-2 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#555] hover:border-[#d97706] hover:text-[#d97706] transition-colors disabled:opacity-40"
+                    className="px-6 py-2 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#aaa] hover:border-[#d97706] hover:text-[#d97706] transition-colors disabled:opacity-40"
                   >
                     {upcomingFetching ? 'LOADING...' : 'LOAD MORE'}
                   </button>
@@ -298,7 +298,7 @@ export default function Schedule() {
       {/* Past */}
       {(allPast.length > 0 || pastError) && (
         <div>
-          <div className="text-[10px] font-display tracking-[0.15em] text-[#444] mb-3">
+          <div className="text-[10px] font-display tracking-[0.15em] text-[#888] mb-3">
             PAST — {allPast.length}{hasMorePast ? '+' : ''}
           </div>
           {pastError ? (
@@ -315,7 +315,7 @@ export default function Schedule() {
                   <button
                     onClick={() => setPastPage(p => p + 1)}
                     disabled={pastFetching}
-                    className="px-6 py-2 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#555] hover:border-[#d97706] hover:text-[#d97706] transition-colors disabled:opacity-40"
+                    className="px-6 py-2 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#aaa] hover:border-[#d97706] hover:text-[#d97706] transition-colors disabled:opacity-40"
                   >
                     {pastFetching ? 'LOADING...' : 'LOAD MORE'}
                   </button>

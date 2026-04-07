@@ -80,7 +80,7 @@ export default function Auth() {
                   className={`flex-1 py-3 text-[10px] tracking-[0.2em] font-display font-medium transition-colors ${
                     mode === key
                       ? 'text-[#d97706] border-b-2 border-[#d97706] -mb-px'
-                      : 'text-[#444] hover:text-[#aaa]'
+                      : 'text-[#888] hover:text-[#aaa]'
                   }`}
                 >
                   {label}
@@ -94,7 +94,7 @@ export default function Auth() {
             <div className="flex items-center gap-3 px-7 pt-6 pb-0">
               <button
                 onClick={() => switchMode('login')}
-                className="font-mono text-[10px] text-[#444] hover:text-[#aaa] tracking-[0.1em] transition-colors"
+                className="font-mono text-[10px] text-[#888] hover:text-[#aaa] tracking-[0.1em] transition-colors"
               >
                 ← BACK TO SIGN IN
               </button>
@@ -110,7 +110,7 @@ export default function Auth() {
             )}
 
             <div>
-              <label className="block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2">
+              <label className="block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2">
                 EMAIL
               </label>
               <input
@@ -126,7 +126,7 @@ export default function Auth() {
 
             {mode !== 'forgot' && (
               <div>
-                <label className="block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2">
+                <label className="block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2">
                   PASSWORD
                 </label>
                 <input

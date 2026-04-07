@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 
 const inputClass =
   'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
-const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
+const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2'
 
 export default function Profile() {
   const [email, setEmail] = useState('')
@@ -66,7 +66,7 @@ export default function Profile() {
     }
   }
 
-  if (loading) return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
+  if (loading) return <div className="font-mono text-[#888] text-xs tracking-[0.3em]">LOADING...</div>
   if (error) return <div className="font-mono text-red-400 text-sm">{error}</div>
 
   return (
@@ -126,7 +126,7 @@ export default function Profile() {
                 <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-[#f0f0f0] transition-transform ${showOnBoard ? 'translate-x-4' : ''}`} />
               </div>
               <div>
-                <div className="text-[10px] tracking-[0.15em] font-display text-[#555]">SHOW ON TEAM BOARD</div>
+                <div className="text-[10px] tracking-[0.15em] font-display text-[#aaa]">SHOW ON TEAM BOARD</div>
                 <div className="text-[10px] font-mono text-[#333] mt-0.5">
                   Share your weight and record on the /board page and teammate activity feed.
                 </div>

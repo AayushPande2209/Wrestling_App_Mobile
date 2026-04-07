@@ -26,7 +26,7 @@ export default function Board() {
     staleTime: 30_000,
   })
 
-  if (isLoading) return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
+  if (isLoading) return <div className="font-mono text-[#888] text-xs tracking-[0.3em]">LOADING...</div>
   if (error) return (
     <div className="font-mono text-red-400 text-sm border border-red-900/50 bg-red-950/20 px-3 py-2">
       Failed to load board: {error.message}
@@ -37,7 +37,7 @@ export default function Board() {
     <div className="space-y-8">
       <div>
         <h1 className="font-display font-bold text-2xl tracking-[0.2em] text-[#f0f0f0]">TEAM BOARD</h1>
-        <p className="font-mono text-[10px] text-[#444] mt-1 tracking-[0.1em]">
+        <p className="font-mono text-[10px] text-[#888] mt-1 tracking-[0.1em]">
           Wrestlers who opted in via Profile → Show on Team Board
         </p>
       </div>
@@ -51,7 +51,7 @@ export default function Board() {
           {/* Header */}
           <div className="grid grid-cols-4 px-5 py-3 border-b border-[#1a1a1a] bg-[#080808]">
             {['WRESTLER', 'CLASS', 'CURRENT WEIGHT', 'TO CUT'].map(h => (
-              <div key={h} className="text-[10px] font-display tracking-[0.15em] text-[#444]">{h}</div>
+              <div key={h} className="text-[10px] font-display tracking-[0.15em] text-[#888]">{h}</div>
             ))}
           </div>
           {wrestlers.map(w => {
@@ -68,13 +68,13 @@ export default function Board() {
                 className="grid grid-cols-4 px-5 py-3.5 border-b border-[#111] hover:bg-[#0d0d0d] transition-colors"
               >
                 <div className="font-mono text-sm text-[#ccc]">{w.name && !w.name.includes('@') ? w.name : '—'}</div>
-                <div className="font-mono text-sm text-[#555]">
+                <div className="font-mono text-sm text-[#aaa]">
                   {w.weight_class != null ? `${w.weight_class} LBS` : '—'}
                 </div>
                 <div className="font-mono text-sm text-[#ccc]">
                   {w.current_weight != null ? `${w.current_weight} LBS` : '—'}
                 </div>
-                <div className={`font-mono text-sm font-bold ${highlight ? 'text-[#d97706]' : 'text-[#555]'}`}>
+                <div className={`font-mono text-sm font-bold ${highlight ? 'text-[#d97706]' : 'text-[#aaa]'}`}>
                   {lbsToCut !== null
                     ? (onWeight ? 'ON WEIGHT' : `${lbsToCut.toFixed(1)} LBS`)
                     : '—'}

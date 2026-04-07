@@ -10,7 +10,7 @@ const RESULTS = ['win', 'loss', 'draw']
 
 const inputClass =
   'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
-const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
+const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2'
 
 export default function Matches() {
   const queryClient = useQueryClient()
@@ -184,7 +184,7 @@ export default function Matches() {
   const hasMore = pageData?.length === PAGE_SIZE
 
   if (isLoading && page === 0) {
-    return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
+    return <div className="font-mono text-[#888] text-xs tracking-[0.3em]">LOADING...</div>
   }
 
   if (error) {
@@ -313,14 +313,14 @@ export default function Matches() {
         <div className="flex items-baseline gap-4 mb-5">
           <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706]">MATCH OUTCOME PREDICTOR</div>
           {totalMatches < 10 && (
-            <div className="text-[10px] font-mono text-[#444]">
+            <div className="text-[10px] font-mono text-[#888]">
               {10 - totalMatches} more match{10 - totalMatches !== 1 ? 'es' : ''} needed for a real prediction
             </div>
           )}
         </div>
         <form onSubmit={handleMatchOutcome} className="flex flex-col md:flex-row md:items-end gap-4">
           <div className="w-full md:w-44">
-            <label className="block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2">YOUR WEIGHT (LBS)</label>
+            <label className="block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2">YOUR WEIGHT (LBS)</label>
             <input
               type="number"
               step="0.1"
@@ -335,7 +335,7 @@ export default function Matches() {
             />
           </div>
           <div className="w-full md:w-44">
-            <label className="block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2">TARGET CLASS (LBS)</label>
+            <label className="block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2">TARGET CLASS (LBS)</label>
             <input
               type="number"
               inputMode="numeric"
@@ -359,18 +359,18 @@ export default function Matches() {
           <div className="mt-5 pt-4 border-t border-[#1a1a1a]">
             <div className="flex items-center gap-8 mb-4">
               <div>
-                <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">WIN PROBABILITY</div>
+                <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em]">WIN PROBABILITY</div>
                 <div className="font-mono text-3xl font-bold text-[#f0f0f0] mt-1">
                   {(outcomeResult.win_probability * 100).toFixed(0)}
-                  <span className="text-sm text-[#555] ml-1">%</span>
+                  <span className="text-sm text-[#aaa] ml-1">%</span>
                 </div>
               </div>
               <div>
-                <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">CONFIDENCE</div>
+                <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em]">CONFIDENCE</div>
                 <div className={`font-mono text-sm font-bold mt-1 tracking-wider ${
                   outcomeResult.confidence === 'high' ? 'text-green-500'
                   : outcomeResult.confidence === 'medium' ? 'text-[#d97706]'
-                  : 'text-[#555]'
+                  : 'text-[#aaa]'
                 }`}>
                   {outcomeResult.confidence.toUpperCase()}
                 </div>
@@ -392,7 +392,7 @@ export default function Matches() {
       <div className="border border-[#1a1a1a] min-w-[520px]">
         <div className="grid grid-cols-5 px-5 py-3 border-b border-[#1a1a1a] bg-[#080808]">
           {['DATE', 'OPPONENT', 'RESULT', 'SCORE', 'TOURNAMENT'].map(h => (
-            <div key={h} className="text-[10px] font-display tracking-[0.15em] text-[#444]">{h}</div>
+            <div key={h} className="text-[10px] font-display tracking-[0.15em] text-[#888]">{h}</div>
           ))}
         </div>
         {allMatches.length === 0 ? (
@@ -403,7 +403,7 @@ export default function Matches() {
               key={m.id}
               className="grid grid-cols-5 px-5 py-3.5 border-b border-[#111] hover:bg-[#0d0d0d] transition-colors"
             >
-              <div className="font-mono text-[11px] text-[#555]">
+              <div className="font-mono text-[11px] text-[#aaa]">
                 {new Date(m.match_date)
                   .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                   .toUpperCase()}
@@ -415,14 +415,14 @@ export default function Matches() {
                     ? 'text-green-500'
                     : m.result === 'loss'
                     ? 'text-red-500'
-                    : 'text-[#555]'
+                    : 'text-[#aaa]'
                 }`}
               >
                 {m.result.toUpperCase()}
                 {m.win_type ? ` · ${m.win_type.toUpperCase()}` : ''}
               </div>
               <div className="font-mono text-sm text-[#ccc]">{m.score || '—'}</div>
-              <div className="font-mono text-[11px] text-[#555]">
+              <div className="font-mono text-[11px] text-[#aaa]">
                 {m.tournaments?.name ?? m.tournament ?? '—'}
               </div>
             </div>
@@ -437,7 +437,7 @@ export default function Matches() {
           <button
             onClick={() => setPage(p => p + 1)}
             disabled={isFetching}
-            className="px-6 py-2 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#555] hover:border-[#d97706] hover:text-[#d97706] transition-colors disabled:opacity-40"
+            className="px-6 py-2 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#aaa] hover:border-[#d97706] hover:text-[#d97706] transition-colors disabled:opacity-40"
           >
             {isFetching ? 'LOADING...' : 'LOAD MORE'}
           </button>

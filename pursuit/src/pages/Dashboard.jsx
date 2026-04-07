@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL
 function StatBox({ label, value, highlight }) {
   return (
     <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-5">
-      <div className="text-[10px] font-display tracking-[0.15em] text-[#555] mb-2">{label}</div>
+      <div className="text-[10px] font-display tracking-[0.15em] text-[#aaa] mb-2">{label}</div>
       <div className={`font-mono text-3xl font-bold tracking-tight ${highlight ? 'text-[#d97706]' : 'text-[#f0f0f0]'}`}>
         {value}
       </div>
@@ -144,7 +144,7 @@ export default function Dashboard() {
     }
   }
 
-  if (loading) return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
+  if (loading) return <div className="font-mono text-[#888] text-xs tracking-[0.3em]">LOADING...</div>
   if (error) return <div className="font-mono text-red-400 text-sm">{error}</div>
 
   // Show name only when it has been set to something other than the email default
@@ -160,7 +160,7 @@ export default function Dashboard() {
   const trendColor =
     perfTrend?.trend === 'improving' ? 'text-green-500'
     : perfTrend?.trend === 'declining' ? 'text-red-400'
-    : 'text-[#555]'
+    : 'text-[#aaa]'
 
   return (
     <div className="space-y-8">
@@ -168,7 +168,7 @@ export default function Dashboard() {
       <div>
         <h1 className="font-display font-bold text-2xl tracking-[0.2em] text-[#f0f0f0]">DASHBOARD</h1>
         {displayName && (
-          <p className="font-mono text-[10px] text-[#444] mt-1 tracking-[0.2em]">{displayName.toUpperCase()}</p>
+          <p className="font-mono text-[10px] text-[#888] mt-1 tracking-[0.2em]">{displayName.toUpperCase()}</p>
         )}
       </div>
 
@@ -191,25 +191,25 @@ export default function Dashboard() {
           <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-4">PERFORMANCE TREND</div>
           <div className="flex flex-wrap items-start gap-6 md:gap-10">
             <div>
-              <div className="text-[10px] font-display text-[#555] tracking-[0.15em] mb-1">OVERALL WIN RATE</div>
+              <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em] mb-1">OVERALL WIN RATE</div>
               <div className="font-mono text-2xl text-[#f0f0f0]">
-                {(perfTrend.win_rate * 100).toFixed(0)}<span className="text-xs text-[#555] ml-1">%</span>
+                {(perfTrend.win_rate * 100).toFixed(0)}<span className="text-xs text-[#aaa] ml-1">%</span>
               </div>
             </div>
             <div>
-              <div className="text-[10px] font-display text-[#555] tracking-[0.15em] mb-1">RECENT WIN RATE</div>
+              <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em] mb-1">RECENT WIN RATE</div>
               <div className="font-mono text-2xl text-[#f0f0f0]">
-                {(perfTrend.recent_win_rate * 100).toFixed(0)}<span className="text-xs text-[#555] ml-1">%</span>
+                {(perfTrend.recent_win_rate * 100).toFixed(0)}<span className="text-xs text-[#aaa] ml-1">%</span>
               </div>
             </div>
             <div>
-              <div className="text-[10px] font-display text-[#555] tracking-[0.15em] mb-1">TREND</div>
+              <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em] mb-1">TREND</div>
               <div className={`font-mono text-sm font-bold tracking-wider mt-1 ${trendColor}`}>
                 {perfTrend.trend.toUpperCase()}
               </div>
             </div>
             <div className="flex-1">
-              <div className="text-[10px] font-display text-[#555] tracking-[0.15em] mb-1">INSIGHT</div>
+              <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em] mb-1">INSIGHT</div>
               <div className="font-mono text-sm text-[#ccc] leading-relaxed">{perfTrend.insight}</div>
             </div>
           </div>
@@ -224,13 +224,13 @@ export default function Dashboard() {
             <p className="font-mono text-sm text-[#ccc] leading-relaxed">{prediction.recommendation}</p>
             <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-[#1a1a1a]">
               <div>
-                <div className="text-[10px] font-display text-[#555] tracking-[0.15em] mb-1">DAILY RATE</div>
+                <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em] mb-1">DAILY RATE</div>
                 <div className="font-mono text-xl text-[#f0f0f0]">
-                  {prediction.daily_cut_rate} <span className="text-xs text-[#555]">LBS/DAY</span>
+                  {prediction.daily_cut_rate} <span className="text-xs text-[#aaa]">LBS/DAY</span>
                 </div>
               </div>
               <div>
-                <div className="text-[10px] font-display text-[#555] tracking-[0.15em] mb-1">STATUS</div>
+                <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em] mb-1">STATUS</div>
                 <div className={`font-mono text-sm font-bold mt-1 ${prediction.is_safe ? 'text-green-500' : 'text-[#d97706]'}`}>
                   {prediction.is_safe ? 'SAFE' : 'AGGRESSIVE'}
                 </div>
@@ -245,11 +245,11 @@ export default function Dashboard() {
           {nextEvent ? (
             <>
               <div className="font-display font-semibold text-base text-[#f0f0f0] tracking-wide">{nextEvent.title}</div>
-              <div className="font-mono text-[11px] text-[#555] mt-2">
+              <div className="font-mono text-[11px] text-[#aaa] mt-2">
                 {new Date(nextEvent.starts_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
               </div>
               {nextEvent.location && (
-                <div className="font-mono text-[11px] text-[#555] mt-1">{nextEvent.location.toUpperCase()}</div>
+                <div className="font-mono text-[11px] text-[#aaa] mt-1">{nextEvent.location.toUpperCase()}</div>
               )}
             </>
           ) : (
@@ -269,7 +269,7 @@ export default function Dashboard() {
                   {new Date(item.ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </span>
                 <span className="text-[#d97706] shrink-0">{item.name}</span>
-                <span className="text-[#555]">{item.text}</span>
+                <span className="text-[#aaa]">{item.text}</span>
               </div>
             ))}
           </div>
@@ -278,7 +278,7 @@ export default function Dashboard() {
 
       {/* Quick actions */}
       <div>
-        <div className="text-[10px] font-display tracking-[0.15em] text-[#555] mb-3">QUICK ACTIONS</div>
+        <div className="text-[10px] font-display tracking-[0.15em] text-[#aaa] mb-3">QUICK ACTIONS</div>
         <div className="flex flex-col md:flex-row gap-3">
           {[
             { label: 'LOG WEIGHT', to: '/weight' },

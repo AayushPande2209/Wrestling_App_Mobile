@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 
 const inputClass =
   'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
-const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
+const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2'
 
 export default function ProfileSetup() {
   const [name, setName] = useState('')
@@ -73,7 +73,7 @@ export default function ProfileSetup() {
           <div className="font-display font-bold text-lg tracking-[0.15em] text-[#f0f0f0] mb-1">
             Set up your profile
           </div>
-          <p className="font-mono text-[10px] text-[#444] tracking-[0.08em] mb-6">
+          <p className="font-mono text-[10px] text-[#888] tracking-[0.08em] mb-6">
             You can update this any time from your profile page.
           </p>
 

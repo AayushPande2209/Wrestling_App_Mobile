@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 
 const inputClass =
   'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
-const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
+const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2'
 
 const GOAL_TYPES = [
   { value: 'lifting', label: 'Lifting (auto)' },
@@ -127,17 +127,17 @@ function GoalCard({ goal, computedProgress, uid, weekHabitLogs, onDelete, queryC
     <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <div className="font-display text-[9px] tracking-[0.15em] text-[#444] mb-1">
+          <div className="font-display text-[9px] tracking-[0.15em] text-[#888] mb-1">
             {goal.goal_type.replace('_', ' ').toUpperCase()}
           </div>
           <div className="font-mono text-sm text-[#f0f0f0] leading-snug">{goal.description}</div>
           {goal.target_date && (
-            <div className="font-mono text-[10px] text-[#444] mt-1">
+            <div className="font-mono text-[10px] text-[#888] mt-1">
               By {new Date(goal.target_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </div>
           )}
           {targetLabel && (
-            <div className="font-mono text-[10px] text-[#555] mt-0.5">{targetLabel}</div>
+            <div className="font-mono text-[10px] text-[#aaa] mt-0.5">{targetLabel}</div>
           )}
         </div>
         <button
@@ -150,7 +150,7 @@ function GoalCard({ goal, computedProgress, uid, weekHabitLogs, onDelete, queryC
       </div>
 
       <ProgressBar value={progress} />
-      <div className="font-mono text-[10px] text-[#555] mt-1.5">{Math.round(progress)}%</div>
+      <div className="font-mono text-[10px] text-[#aaa] mt-1.5">{Math.round(progress)}%</div>
 
       <div className="mt-3 flex gap-3 flex-wrap">
         {goal.goal_type === 'habit' && !goal.completed && (
@@ -371,7 +371,7 @@ export default function Goals() {
       {/* Header */}
       <div>
         <h1 className="font-display font-bold text-2xl tracking-[0.2em] text-[#f0f0f0]">GOALS</h1>
-        <p className="font-mono text-[11px] text-[#444] tracking-[0.1em] mt-1">
+        <p className="font-mono text-[11px] text-[#888] tracking-[0.1em] mt-1">
           Track season targets. Auto goals compute progress from your activity this week.
         </p>
       </div>
@@ -488,7 +488,7 @@ export default function Goals() {
 
       {/* Active goals */}
       <div>
-        <div className="text-[10px] font-display tracking-[0.15em] text-[#555] mb-4">
+        <div className="text-[10px] font-display tracking-[0.15em] text-[#aaa] mb-4">
           ACTIVE GOALS
           {activeGoals.length > 0 && (
             <span className="ml-2 text-[#333]">
@@ -497,7 +497,7 @@ export default function Goals() {
           )}
         </div>
 
-        {goalsLoading && <p className="font-mono text-[11px] text-[#444]">Loading...</p>}
+        {goalsLoading && <p className="font-mono text-[11px] text-[#888]">Loading...</p>}
         {!goalsLoading && activeGoals.length === 0 && (
           <p className="font-mono text-[11px] text-[#333] tracking-[0.1em]">No active goals. Add one above.</p>
         )}
@@ -520,7 +520,7 @@ export default function Goals() {
       {/* Past goals */}
       {pastGoals.length > 0 && (
         <div>
-          <div className="text-[10px] font-display tracking-[0.15em] text-[#555] mb-4">PAST GOALS</div>
+          <div className="text-[10px] font-display tracking-[0.15em] text-[#aaa] mb-4">PAST GOALS</div>
           <div className="space-y-2">
             {pastGoals.map(goal => {
               const succeeded = goal.completed
@@ -543,7 +543,7 @@ export default function Goals() {
                         COMPLETED
                       </span>
                     ) : (
-                      <span className="font-display text-[9px] tracking-[0.15em] text-[#555] border border-[#222] px-2 py-1">
+                      <span className="font-display text-[9px] tracking-[0.15em] text-[#aaa] border border-[#222] px-2 py-1">
                         MISSED
                       </span>
                     )}
@@ -582,7 +582,7 @@ export default function Goals() {
               </button>
               <button
                 onClick={() => setPendingDelete(null)}
-                className="font-mono text-[10px] text-[#444] hover:text-[#ccc] tracking-[0.1em] transition-colors"
+                className="font-mono text-[10px] text-[#888] hover:text-[#ccc] tracking-[0.1em] transition-colors"
               >
                 CANCEL
               </button>

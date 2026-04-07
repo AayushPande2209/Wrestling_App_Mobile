@@ -7,7 +7,7 @@ const PAGE_SIZE = 15
 
 const inputClass =
   'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
-const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
+const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2'
 
 const EMPTY_ROW = { name: '', sets: '', reps: '', weight: '' }
 
@@ -38,10 +38,10 @@ function WorkoutExercises({ workoutId, uid }) {
   })
 
   if (isLoading) {
-    return <p className="font-mono text-[10px] text-[#444] tracking-[0.1em] px-4 pb-3">Loading...</p>
+    return <p className="font-mono text-[10px] text-[#888] tracking-[0.1em] px-4 pb-3">Loading...</p>
   }
   if (!exercises.length) {
-    return <p className="font-mono text-[10px] text-[#444] tracking-[0.1em] px-4 pb-3">No exercises logged.</p>
+    return <p className="font-mono text-[10px] text-[#888] tracking-[0.1em] px-4 pb-3">No exercises logged.</p>
   }
 
   return (
@@ -50,7 +50,7 @@ function WorkoutExercises({ workoutId, uid }) {
         <thead>
           <tr className="border-b border-[#1a1a1a]">
             {['EXERCISE', 'SETS', 'REPS', 'WEIGHT'].map(h => (
-              <th key={h} className="font-display text-[9px] tracking-[0.15em] text-[#444] pb-2 pr-4">{h}</th>
+              <th key={h} className="font-display text-[9px] tracking-[0.15em] text-[#888] pb-2 pr-4">{h}</th>
             ))}
           </tr>
         </thead>
@@ -294,7 +294,7 @@ export default function Workouts() {
       {/* Header */}
       <div>
         <h1 className="font-display font-bold text-2xl tracking-[0.2em] text-[#f0f0f0]">WORKOUTS</h1>
-        <p className="font-mono text-[11px] text-[#444] tracking-[0.1em] mt-1">Log lifting, practice, cardio, and more</p>
+        <p className="font-mono text-[11px] text-[#888] tracking-[0.1em] mt-1">Log lifting, practice, cardio, and more</p>
       </div>
 
       {/* Form */}
@@ -314,7 +314,7 @@ export default function Workouts() {
                 className={`px-4 py-2 font-display text-[10px] tracking-[0.15em] border transition-colors ${
                   workoutType === t.value
                     ? 'border-[#d97706] text-[#d97706] bg-[#d97706]/10'
-                    : 'border-[#1e1e1e] text-[#444] hover:border-[#555] hover:text-[#888]'
+                    : 'border-[#1e1e1e] text-[#888] hover:border-[#555] hover:text-[#888]'
                 }`}
               >
                 {t.label.toUpperCase()}
@@ -373,7 +373,7 @@ export default function Workouts() {
                   <thead>
                     <tr className="border-b border-[#1a1a1a] bg-[#060606]">
                       {['EXERCISE', 'SETS', 'REPS', 'WEIGHT (LBS)', ''].map((h, i) => (
-                        <th key={i} className="font-display text-[9px] tracking-[0.15em] text-[#444] px-3 py-2">{h}</th>
+                        <th key={i} className="font-display text-[9px] tracking-[0.15em] text-[#888] px-3 py-2">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -451,7 +451,7 @@ export default function Workouts() {
                     />
                     <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <div className="font-display text-[9px] tracking-[0.15em] text-[#444] mb-1">SETS</div>
+                        <div className="font-display text-[9px] tracking-[0.15em] text-[#888] mb-1">SETS</div>
                         <input
                           type="number"
                           value={row.sets}
@@ -463,7 +463,7 @@ export default function Workouts() {
                         />
                       </div>
                       <div>
-                        <div className="font-display text-[9px] tracking-[0.15em] text-[#444] mb-1">REPS</div>
+                        <div className="font-display text-[9px] tracking-[0.15em] text-[#888] mb-1">REPS</div>
                         <input
                           type="number"
                           value={row.reps}
@@ -475,7 +475,7 @@ export default function Workouts() {
                         />
                       </div>
                       <div>
-                        <div className="font-display text-[9px] tracking-[0.15em] text-[#444] mb-1">LBS</div>
+                        <div className="font-display text-[9px] tracking-[0.15em] text-[#888] mb-1">LBS</div>
                         <input
                           type="number"
                           value={row.weight}
@@ -502,7 +502,7 @@ export default function Workouts() {
               <button
                 type="button"
                 onClick={() => setRows(prev => [...prev, { ...EMPTY_ROW }])}
-                className="mt-2 w-full md:w-auto font-mono text-[10px] text-[#444] hover:text-[#d97706] tracking-[0.1em] transition-colors md:text-left text-center border border-[#1a1a1a] md:border-0 py-2 md:py-0"
+                className="mt-2 w-full md:w-auto font-mono text-[10px] text-[#888] hover:text-[#d97706] tracking-[0.1em] transition-colors md:text-left text-center border border-[#1a1a1a] md:border-0 py-2 md:py-0"
               >
                 + ADD ROW
               </button>
@@ -532,7 +532,7 @@ export default function Workouts() {
               <button
                 type="button"
                 onClick={resetForm}
-                className="font-mono text-[10px] text-[#444] hover:text-[#ccc] tracking-[0.1em] transition-colors"
+                className="font-mono text-[10px] text-[#888] hover:text-[#ccc] tracking-[0.1em] transition-colors"
               >
                 CANCEL
               </button>
@@ -543,10 +543,10 @@ export default function Workouts() {
 
       {/* Workout list */}
       <div>
-        <div className="text-[10px] font-display tracking-[0.15em] text-[#555] mb-4">PAST WORKOUTS</div>
+        <div className="text-[10px] font-display tracking-[0.15em] text-[#aaa] mb-4">PAST WORKOUTS</div>
 
         {isLoading && page === 0 && (
-          <p className="font-mono text-[11px] text-[#444]">Loading...</p>
+          <p className="font-mono text-[11px] text-[#888]">Loading...</p>
         )}
         {error && (
           <p className="font-mono text-[11px] text-red-400">{error.message}</p>
@@ -571,16 +571,16 @@ export default function Workouts() {
                         month: 'short', day: 'numeric', year: 'numeric'
                       })}
                     </span>
-                    <span className="font-display text-[9px] tracking-[0.15em] text-[#555] shrink-0">
+                    <span className="font-display text-[9px] tracking-[0.15em] text-[#aaa] shrink-0">
                       {TYPE_LABELS[workout.workout_type ?? 'lifting'].toUpperCase()}
                     </span>
                     {workout.duration_minutes && (
-                      <span className="font-mono text-[10px] text-[#444]">
+                      <span className="font-mono text-[10px] text-[#888]">
                         {workout.duration_minutes} min
                       </span>
                     )}
                     {workout.notes && (
-                      <span className="font-mono text-[11px] text-[#555] truncate">{workout.notes}</span>
+                      <span className="font-mono text-[11px] text-[#aaa] truncate">{workout.notes}</span>
                     )}
                     {isLifting && (
                       <span className="font-mono text-[10px] text-[#333] ml-auto">
@@ -592,14 +592,14 @@ export default function Workouts() {
                   <button
                     type="button"
                     onClick={() => startEdit(workout)}
-                    className="font-mono text-[10px] text-[#444] hover:text-[#d97706] tracking-[0.1em] transition-colors"
+                    className="font-mono text-[10px] text-[#888] hover:text-[#d97706] tracking-[0.1em] transition-colors"
                   >
                     EDIT
                   </button>
                   <button
                     type="button"
                     onClick={() => setPendingDelete(workout.id)}
-                    className="font-mono text-[10px] text-[#444] hover:text-red-500 tracking-[0.1em] transition-colors"
+                    className="font-mono text-[10px] text-[#888] hover:text-red-500 tracking-[0.1em] transition-colors"
                   >
                     DELETE
                   </button>
@@ -618,7 +618,7 @@ export default function Workouts() {
         {hasMore && (
           <button
             onClick={() => setPage(p => p + 1)}
-            className="mt-4 font-mono text-[10px] text-[#444] hover:text-[#d97706] tracking-[0.1em] transition-colors border border-[#1a1a1a] px-4 py-2"
+            className="mt-4 font-mono text-[10px] text-[#888] hover:text-[#d97706] tracking-[0.1em] transition-colors border border-[#1a1a1a] px-4 py-2"
           >
             LOAD MORE
           </button>
@@ -643,7 +643,7 @@ export default function Workouts() {
               </button>
               <button
                 onClick={() => setPendingDelete(null)}
-                className="font-mono text-[10px] text-[#444] hover:text-[#ccc] tracking-[0.1em] transition-colors"
+                className="font-mono text-[10px] text-[#888] hover:text-[#ccc] tracking-[0.1em] transition-colors"
               >
                 CANCEL
               </button>

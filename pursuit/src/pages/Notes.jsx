@@ -8,12 +8,12 @@ const CONTEXTS = ['general', 'practice', 'match']
 const CONTEXT_STYLE = {
   practice: 'text-blue-400 border-blue-900/60',
   match: 'text-[#d97706] border-amber-800/60',
-  general: 'text-[#555] border-[#2a2a2a]',
+  general: 'text-[#aaa] border-[#2a2a2a]',
 }
 
 const inputClass =
   'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
-const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
+const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2'
 
 export default function Notes() {
   const queryClient = useQueryClient()
@@ -110,7 +110,7 @@ export default function Notes() {
   const filtered = filter === 'all' ? allNotes : allNotes.filter(n => n.context === filter)
 
   if (isLoading && page === 0) {
-    return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
+    return <div className="font-mono text-[#888] text-xs tracking-[0.3em]">LOADING...</div>
   }
 
   if (error) {
@@ -193,7 +193,7 @@ export default function Notes() {
 
       {/* Filter */}
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-[10px] font-display tracking-[0.15em] text-[#444]">FILTER:</span>
+        <span className="text-[10px] font-display tracking-[0.15em] text-[#888]">FILTER:</span>
         {['all', ...CONTEXTS].map(f => (
           <button
             key={f}
@@ -201,7 +201,7 @@ export default function Notes() {
             className={`px-3 py-1 text-[10px] font-display tracking-[0.12em] border transition-colors ${
               filter === f
                 ? 'border-[#d97706] text-[#d97706]'
-                : 'border-[#1e1e1e] text-[#444] hover:border-[#2a2a2a] hover:text-[#aaa]'
+                : 'border-[#1e1e1e] text-[#888] hover:border-[#2a2a2a] hover:text-[#aaa]'
             }`}
           >
             {f.toUpperCase()}
@@ -250,7 +250,7 @@ export default function Notes() {
           <button
             onClick={() => setPage(p => p + 1)}
             disabled={isFetching}
-            className="px-6 py-2 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#555] hover:border-[#d97706] hover:text-[#d97706] transition-colors disabled:opacity-40"
+            className="px-6 py-2 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#aaa] hover:border-[#d97706] hover:text-[#d97706] transition-colors disabled:opacity-40"
           >
             {isFetching ? 'LOADING...' : 'LOAD MORE'}
           </button>

@@ -5,11 +5,11 @@ import { supabase } from '../lib/supabase'
 function RecordCard({ label, value, sub }) {
   return (
     <div className="bg-[#0a0a0a] border border-[#1a1a1a] p-5">
-      <div className="text-[10px] font-display tracking-[0.15em] text-[#555] mb-2">{label}</div>
+      <div className="text-[10px] font-display tracking-[0.15em] text-[#aaa] mb-2">{label}</div>
       {value !== null ? (
         <>
           <div className="font-mono text-2xl font-bold text-[#f0f0f0] tracking-tight">{value}</div>
-          {sub && <div className="font-mono text-[11px] text-[#444] mt-1">{sub}</div>}
+          {sub && <div className="font-mono text-[11px] text-[#888] mt-1">{sub}</div>}
         </>
       ) : (
         <div className="font-mono text-sm text-[#333]">—</div>
@@ -100,7 +100,7 @@ export default function Records() {
     staleTime: 30_000,
   })
 
-  if (isLoading) return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
+  if (isLoading) return <div className="font-mono text-[#888] text-xs tracking-[0.3em]">LOADING...</div>
   if (error) return (
     <div className="font-mono text-red-400 text-sm border border-red-900/50 bg-red-950/20 px-3 py-2">
       Failed to load matches: {error.message}
@@ -148,21 +148,21 @@ export default function Records() {
             <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-4">CAREER SUMMARY</div>
             <div className="grid grid-cols-4 gap-6">
               <div>
-                <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">TOTAL MATCHES</div>
+                <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em]">TOTAL MATCHES</div>
                 <div className="font-mono text-2xl text-[#f0f0f0] mt-1">{totalMatches}</div>
               </div>
               <div>
-                <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">WIN RATE</div>
+                <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em]">WIN RATE</div>
                 <div className="font-mono text-2xl text-[#f0f0f0] mt-1">
                   {totalMatches > 0 ? `${Math.round((wins / totalMatches) * 100)}%` : '—'}
                 </div>
               </div>
               <div>
-                <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">TOTAL PINS</div>
+                <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em]">TOTAL PINS</div>
                 <div className="font-mono text-2xl text-[#f0f0f0] mt-1">{pins}</div>
               </div>
               <div>
-                <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">PIN RATE</div>
+                <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em]">PIN RATE</div>
                 <div className="font-mono text-2xl text-[#f0f0f0] mt-1">
                   {pinRate !== null ? `${pinRate}%` : '—'}
                 </div>

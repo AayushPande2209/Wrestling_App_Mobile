@@ -82,7 +82,7 @@ export default function Layout({ children }) {
           <button
             onClick={close}
             aria-label="Close menu"
-            className="md:hidden w-8 h-8 flex items-center justify-center text-[#555] hover:text-[#aaa] transition-colors"
+            className="md:hidden w-8 h-8 flex items-center justify-center text-[#aaa] hover:text-[#aaa] transition-colors"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
               <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -100,7 +100,7 @@ export default function Layout({ children }) {
                 `flex items-center px-6 py-3 text-[10px] tracking-[0.18em] font-display font-medium transition-colors ${
                   isActive
                     ? 'text-[#d97706] border-l-2 border-[#d97706] bg-[#d97706]/5'
-                    : 'text-[#555] border-l-2 border-transparent hover:text-[#ccc] hover:border-[#333]'
+                    : 'text-[#aaa] border-l-2 border-transparent hover:text-[#ccc] hover:border-[#333]'
                 }`
               }
             >
@@ -111,7 +111,7 @@ export default function Layout({ children }) {
 
         <button
           onClick={handleSignOut}
-          className="mx-5 mb-5 px-4 py-2 text-[10px] tracking-[0.18em] font-display font-medium text-[#444] border border-[#1e1e1e] hover:border-[#d97706] hover:text-[#d97706] transition-colors"
+          className="mx-5 mb-5 px-4 py-2 text-[10px] tracking-[0.18em] font-display font-medium text-[#888] border border-[#1e1e1e] hover:border-[#d97706] hover:text-[#d97706] transition-colors"
         >
           SIGN OUT
         </button>

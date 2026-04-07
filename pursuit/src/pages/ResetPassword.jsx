@@ -52,11 +52,11 @@ export default function ResetPassword() {
           </div>
 
           {!ready ? (
-            <p className="font-mono text-xs text-[#444] tracking-[0.1em]">Verifying reset link...</p>
+            <p className="font-mono text-xs text-[#888] tracking-[0.1em]">Verifying reset link...</p>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2">
+                <label className="block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2">
                   NEW PASSWORD
                 </label>
                 <input

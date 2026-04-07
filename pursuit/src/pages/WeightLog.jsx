@@ -32,15 +32,15 @@ function CustomTooltip({ active, payload }) {
   const { date, entries } = payload[0].payload
   return (
     <div className="bg-[#0a0a0a] border border-[#1e1e1e] p-3 min-w-[160px]">
-      <div className="font-mono text-[10px] text-[#555] tracking-[0.1em] mb-2">{date}</div>
+      <div className="font-mono text-[10px] text-[#aaa] tracking-[0.1em] mb-2">{date}</div>
       {entries.map((e, i) => (
         <div key={i} className="mb-1.5 last:mb-0">
           <div className="font-mono text-xs text-[#f0f0f0]">
-            {e.weight} <span className="text-[#555]">LBS</span>
+            {e.weight} <span className="text-[#aaa]">LBS</span>
             <span className="text-[#d97706] ml-2">· {TIME_OF_DAY_LABELS[e.time_of_day] ?? e.time_of_day}</span>
           </div>
           {e.note && (
-            <div className="font-mono text-[10px] text-[#444] mt-0.5 leading-snug">{e.note}</div>
+            <div className="font-mono text-[10px] text-[#888] mt-0.5 leading-snug">{e.note}</div>
           )}
         </div>
       ))}
@@ -195,12 +195,12 @@ export default function WeightLog() {
 
   const inputClass =
     'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
-  const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
+  const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2'
 
   const confidenceColor = {
     high: 'text-green-500',
     medium: 'text-[#d97706]',
-    low: 'text-[#555]',
+    low: 'text-[#aaa]',
   }
 
   return (
@@ -322,19 +322,19 @@ export default function WeightLog() {
               </p>
               <div className="flex gap-6 pt-1">
                 <div>
-                  <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">TO CUT</div>
+                  <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em]">TO CUT</div>
                   <div className="font-mono text-xl text-[#f0f0f0] mt-1">
-                    {cutResult.lbs_to_cut} <span className="text-xs text-[#555]">LBS</span>
+                    {cutResult.lbs_to_cut} <span className="text-xs text-[#aaa]">LBS</span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">RATE</div>
+                  <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em]">RATE</div>
                   <div className="font-mono text-xl text-[#f0f0f0] mt-1">
-                    {cutResult.daily_cut_rate} <span className="text-xs text-[#555]">LBS/DAY</span>
+                    {cutResult.daily_cut_rate} <span className="text-xs text-[#aaa]">LBS/DAY</span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">STATUS</div>
+                  <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em]">STATUS</div>
                   <div
                     className={`font-mono text-sm font-bold mt-1 ${
                       cutResult.is_safe ? 'text-green-500' : 'text-[#d97706]'
@@ -373,14 +373,14 @@ export default function WeightLog() {
           {trendResult && (
             <div className="flex gap-8 md:ml-4">
               <div>
-                <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">PREDICTED WEIGHT</div>
+                <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em]">PREDICTED WEIGHT</div>
                 <div className="font-mono text-2xl text-[#f0f0f0] mt-1">
-                  {trendResult.predicted_weight} <span className="text-xs text-[#555]">LBS</span>
+                  {trendResult.predicted_weight} <span className="text-xs text-[#aaa]">LBS</span>
                 </div>
               </div>
               <div>
-                <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">CONFIDENCE</div>
-                <div className={`font-mono text-sm font-bold mt-1 tracking-wider ${confidenceColor[trendResult.confidence] ?? 'text-[#555]'}`}>
+                <div className="text-[10px] font-display text-[#aaa] tracking-[0.15em]">CONFIDENCE</div>
+                <div className={`font-mono text-sm font-bold mt-1 tracking-wider ${confidenceColor[trendResult.confidence] ?? 'text-[#aaa]'}`}>
                   {trendResult.confidence.toUpperCase()}
                 </div>
               </div>

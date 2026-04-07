@@ -6,16 +6,16 @@ const API_URL = import.meta.env.VITE_API_URL
 
 const inputClass =
   'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
-const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
+const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#aaa] mb-2'
 
 const MEAL_TYPE_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', other: 'Meal' }
 
 function MacroRow({ label, value, unit = 'g', color = '#888' }) {
   return (
     <div className="flex items-baseline justify-between">
-      <span className="font-mono text-[10px] tracking-[0.1em] text-[#555]">{label}</span>
+      <span className="font-mono text-[10px] tracking-[0.1em] text-[#aaa]">{label}</span>
       <span className="font-mono text-sm" style={{ color }}>
-        {value}<span className="text-[#444] text-[10px] ml-0.5">{unit}</span>
+        {value}<span className="text-[#888] text-[10px] ml-0.5">{unit}</span>
       </span>
     </div>
   )
@@ -125,14 +125,14 @@ export default function Nutrition() {
       {/* Header */}
       <div>
         <h1 className="font-display font-bold text-2xl tracking-[0.2em] text-[#f0f0f0]">NUTRITION</h1>
-        <p className="font-mono text-[11px] text-[#444] tracking-[0.1em] mt-1">
+        <p className="font-mono text-[11px] text-[#888] tracking-[0.1em] mt-1">
           Meal planning and post-weigh-in recovery protocols
         </p>
       </div>
 
       {/* ── Section 1: Cut Meal Planner ── */}
       <section className="space-y-6">
-        <div className="text-[10px] font-display tracking-[0.2em] text-[#555] border-b border-[#1a1a1a] pb-3">
+        <div className="text-[10px] font-display tracking-[0.2em] text-[#aaa] border-b border-[#1a1a1a] pb-3">
           CUT MEAL PLANNER
         </div>
 
@@ -191,7 +191,7 @@ export default function Nutrition() {
         </div>
 
         {mpSubmitted && !mpFetching && mpError && (
-          <p className="font-mono text-[11px] text-[#444] tracking-[0.1em]">
+          <p className="font-mono text-[11px] text-[#888] tracking-[0.1em]">
             Meal suggestions unavailable right now.
           </p>
         )}
@@ -200,7 +200,7 @@ export default function Nutrition() {
           <div className="space-y-4">
             {/* Daily totals */}
             <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-5">
-              <div className="font-display text-[9px] tracking-[0.2em] text-[#555] mb-4">DAILY TARGETS</div>
+              <div className="font-display text-[9px] tracking-[0.2em] text-[#aaa] mb-4">DAILY TARGETS</div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
                 {[
                   { label: 'CALORIES', value: mealPlan.daily_calories, unit: 'kcal', color: '#f0f0f0' },
@@ -210,10 +210,10 @@ export default function Nutrition() {
                   { label: 'SODIUM', value: mealPlan.daily_macros.sodium, unit: 'mg', color: mealPlan.sodium_warning ? '#f59e0b' : '#3b82f6' },
                 ].map(({ label, value, unit, color }) => (
                   <div key={label}>
-                    <div className="font-display text-[9px] tracking-[0.15em] text-[#444] mb-1">{label}</div>
+                    <div className="font-display text-[9px] tracking-[0.15em] text-[#888] mb-1">{label}</div>
                     <div className="font-mono text-2xl font-bold" style={{ color }}>
                       {value}
-                      <span className="font-mono text-[10px] text-[#444] ml-1">{unit}</span>
+                      <span className="font-mono text-[10px] text-[#888] ml-1">{unit}</span>
                     </div>
                   </div>
                 ))}
@@ -241,7 +241,7 @@ export default function Nutrition() {
 
       {/* ── Section 2: Recovery Protocol ── */}
       <section className="space-y-6">
-        <div className="text-[10px] font-display tracking-[0.2em] text-[#555] border-b border-[#1a1a1a] pb-3">
+        <div className="text-[10px] font-display tracking-[0.2em] text-[#aaa] border-b border-[#1a1a1a] pb-3">
           POST WEIGH-IN RECOVERY
         </div>
 
@@ -303,7 +303,7 @@ export default function Nutrition() {
         </div>
 
         {rcSubmitted && !rcFetching && rcError && (
-          <p className="font-mono text-[11px] text-[#444] tracking-[0.1em]">
+          <p className="font-mono text-[11px] text-[#888] tracking-[0.1em]">
             Meal suggestions unavailable right now.
           </p>
         )}
@@ -313,13 +313,13 @@ export default function Nutrition() {
             {/* Fluids target */}
             <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-5 flex items-center gap-6">
               <div>
-                <div className="font-display text-[9px] tracking-[0.2em] text-[#555] mb-1">FLUIDS TARGET</div>
+                <div className="font-display text-[9px] tracking-[0.2em] text-[#aaa] mb-1">FLUIDS TARGET</div>
                 <div className="font-mono text-3xl font-bold text-[#d97706]">
                   {recovery.fluids_oz}
-                  <span className="font-mono text-[11px] text-[#555] ml-1">oz</span>
+                  <span className="font-mono text-[11px] text-[#aaa] ml-1">oz</span>
                 </div>
               </div>
-              <div className="font-mono text-[11px] text-[#444] leading-relaxed border-l border-[#1a1a1a] pl-6">
+              <div className="font-mono text-[11px] text-[#888] leading-relaxed border-l border-[#1a1a1a] pl-6">
                 Rehydrate before eating. Spread intake over{' '}
                 {recovery.timeline.length > 1 ? 'the full window' : 'available time'} — do not drink all at once.
               </div>
@@ -327,7 +327,7 @@ export default function Nutrition() {
 
             {/* Timeline */}
             <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-5">
-              <div className="font-display text-[9px] tracking-[0.2em] text-[#555] mb-5">TIMELINE</div>
+              <div className="font-display text-[9px] tracking-[0.2em] text-[#aaa] mb-5">TIMELINE</div>
               <div className="space-y-0">
                 {recovery.timeline.map((step, i) => {
                   const h = step.hours_before_match
@@ -357,7 +357,7 @@ export default function Nutrition() {
             {recovery.sodium_target_mg && (
               <div className="flex items-start gap-3 border border-[#1a1a1a] bg-[#0a0a0a] px-4 py-3">
                 <span className="font-mono text-[#3b82f6] text-sm shrink-0">ⓘ</span>
-                <p className="font-mono text-[11px] text-[#555] leading-relaxed">
+                <p className="font-mono text-[11px] text-[#aaa] leading-relaxed">
                   Sodium target: aim for {recovery.sodium_target_mg}–2000mg during recovery.
                   Sodium helps your body retain the fluids you're drinking — choose electrolyte drinks and lightly salted foods.
                 </p>
@@ -366,7 +366,7 @@ export default function Nutrition() {
 
             {/* Recovery meals */}
             <div>
-              <div className="font-display text-[9px] tracking-[0.2em] text-[#555] mb-4">RECOVERY MEALS</div>
+              <div className="font-display text-[9px] tracking-[0.2em] text-[#aaa] mb-4">RECOVERY MEALS</div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {recovery.meals.map((meal, i) => (
                   <MealCard key={i} meal={meal} />
