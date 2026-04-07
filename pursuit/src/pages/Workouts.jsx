@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase'
 const PAGE_SIZE = 15
 
 const inputClass =
-  'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a]'
+  'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
 const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
 
 const EMPTY_ROW = { name: '', sets: '', reps: '', weight: '' }
@@ -298,7 +298,7 @@ export default function Workouts() {
       </div>
 
       {/* Form */}
-      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
         <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-5">
           {editingId ? 'EDIT WORKOUT' : 'LOG WORKOUT'}
         </div>
@@ -322,7 +322,7 @@ export default function Workouts() {
             ))}
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className={labelClass}>DATE</label>
               <input
@@ -341,6 +341,7 @@ export default function Workouts() {
                 onChange={e => setDurationMinutes(e.target.value)}
                 min="1"
                 max="480"
+                inputMode="numeric"
                 placeholder="60"
                 className={inputClass}
               />
@@ -365,7 +366,9 @@ export default function Workouts() {
           {workoutType === 'lifting' && (
             <div>
               <label className={labelClass}>EXERCISES</label>
-              <div className="border border-[#1a1a1a] overflow-x-auto">
+
+              {/* Desktop table */}
+              <div className="hidden md:block border border-[#1a1a1a] overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[520px]">
                   <thead>
                     <tr className="border-b border-[#1a1a1a] bg-[#060606]">
@@ -392,6 +395,7 @@ export default function Workouts() {
                             value={row.sets}
                             onChange={e => updateRow(idx, 'sets', e.target.value)}
                             min="0"
+                            inputMode="numeric"
                             placeholder="3"
                             className="w-full bg-transparent border-0 text-[#f0f0f0] font-mono text-sm outline-none placeholder-[#333] focus:bg-[#060606] transition-colors px-1 py-1"
                           />
@@ -402,6 +406,7 @@ export default function Workouts() {
                             value={row.reps}
                             onChange={e => updateRow(idx, 'reps', e.target.value)}
                             min="0"
+                            inputMode="numeric"
                             placeholder="5"
                             className="w-full bg-transparent border-0 text-[#f0f0f0] font-mono text-sm outline-none placeholder-[#333] focus:bg-[#060606] transition-colors px-1 py-1"
                           />
@@ -413,6 +418,7 @@ export default function Workouts() {
                             onChange={e => updateRow(idx, 'weight', e.target.value)}
                             min="0"
                             step="2.5"
+                            inputMode="decimal"
                             placeholder="135"
                             className="w-full bg-transparent border-0 text-[#f0f0f0] font-mono text-sm outline-none placeholder-[#333] focus:bg-[#060606] transition-colors px-1 py-1"
                           />
@@ -431,10 +437,72 @@ export default function Workouts() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile card list */}
+              <div className="block md:hidden space-y-2">
+                {rows.map((row, idx) => (
+                  <div key={idx} className="border border-[#1a1a1a] bg-[#060606] p-3 space-y-2">
+                    <input
+                      type="text"
+                      value={row.name}
+                      onChange={e => updateRow(idx, 'name', e.target.value)}
+                      placeholder="Exercise name"
+                      className="w-full bg-transparent border-b border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm outline-none placeholder-[#333] focus:border-[#d97706] transition-colors pb-1.5"
+                    />
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <div className="font-display text-[9px] tracking-[0.15em] text-[#444] mb-1">SETS</div>
+                        <input
+                          type="number"
+                          value={row.sets}
+                          onChange={e => updateRow(idx, 'sets', e.target.value)}
+                          min="0"
+                          inputMode="numeric"
+                          placeholder="3"
+                          className="w-full bg-transparent border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm outline-none placeholder-[#333] focus:border-[#d97706] transition-colors px-2 py-1.5 min-h-[44px]"
+                        />
+                      </div>
+                      <div>
+                        <div className="font-display text-[9px] tracking-[0.15em] text-[#444] mb-1">REPS</div>
+                        <input
+                          type="number"
+                          value={row.reps}
+                          onChange={e => updateRow(idx, 'reps', e.target.value)}
+                          min="0"
+                          inputMode="numeric"
+                          placeholder="5"
+                          className="w-full bg-transparent border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm outline-none placeholder-[#333] focus:border-[#d97706] transition-colors px-2 py-1.5 min-h-[44px]"
+                        />
+                      </div>
+                      <div>
+                        <div className="font-display text-[9px] tracking-[0.15em] text-[#444] mb-1">LBS</div>
+                        <input
+                          type="number"
+                          value={row.weight}
+                          onChange={e => updateRow(idx, 'weight', e.target.value)}
+                          min="0"
+                          step="2.5"
+                          inputMode="decimal"
+                          placeholder="135"
+                          className="w-full bg-transparent border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm outline-none placeholder-[#333] focus:border-[#d97706] transition-colors px-2 py-1.5 min-h-[44px]"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setRows(prev => prev.length === 1 ? prev : prev.filter((_, i) => i !== idx))}
+                      className="font-mono text-[10px] text-[#333] hover:text-red-500 transition-colors"
+                    >
+                      REMOVE
+                    </button>
+                  </div>
+                ))}
+              </div>
+
               <button
                 type="button"
                 onClick={() => setRows(prev => [...prev, { ...EMPTY_ROW }])}
-                className="mt-2 font-mono text-[10px] text-[#444] hover:text-[#d97706] tracking-[0.1em] transition-colors"
+                className="mt-2 w-full md:w-auto font-mono text-[10px] text-[#444] hover:text-[#d97706] tracking-[0.1em] transition-colors md:text-left text-center border border-[#1a1a1a] md:border-0 py-2 md:py-0"
               >
                 + ADD ROW
               </button>
@@ -452,11 +520,11 @@ export default function Workouts() {
             </p>
           )}
 
-          <div className="flex gap-3 items-center">
+          <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
             <button
               type="submit"
               disabled={submitting}
-              className="bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] px-6 py-2.5 hover:bg-[#b45309] transition-colors disabled:opacity-40"
+              className="w-full md:w-auto bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] px-6 py-2.5 hover:bg-[#b45309] transition-colors disabled:opacity-40 min-h-[44px]"
             >
               {submitting ? 'SAVING...' : editingId ? 'UPDATE' : 'LOG WORKOUT'}
             </button>

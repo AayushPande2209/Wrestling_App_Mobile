@@ -9,7 +9,7 @@ const WIN_TYPES = ['decision', 'major', 'tech', 'pin', 'forfeit']
 const RESULTS = ['win', 'loss', 'draw']
 
 const inputClass =
-  'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a]'
+  'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
 const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
 
 export default function Matches() {
@@ -208,10 +208,10 @@ export default function Matches() {
       </div>
 
       {/* Form */}
-      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
         <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-5">ADD MATCH</div>
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className={labelClass}>OPPONENT</label>
               <input
@@ -300,7 +300,7 @@ export default function Matches() {
             <button
               type="submit"
               disabled={submitting}
-              className="px-8 py-2.5 bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] hover:bg-[#b45309] transition-colors disabled:opacity-40"
+              className="w-full md:w-auto px-8 py-2.5 bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] hover:bg-[#b45309] transition-colors disabled:opacity-40 min-h-[44px]"
             >
               {submitting ? 'SAVING...' : 'ADD MATCH'}
             </button>
@@ -309,7 +309,7 @@ export default function Matches() {
       </div>
 
       {/* Match outcome predictor */}
-      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
         <div className="flex items-baseline gap-4 mb-5">
           <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706]">MATCH OUTCOME PREDICTOR</div>
           {totalMatches < 10 && (
@@ -318,36 +318,38 @@ export default function Matches() {
             </div>
           )}
         </div>
-        <form onSubmit={handleMatchOutcome} className="flex items-end gap-4">
-          <div className="w-44">
+        <form onSubmit={handleMatchOutcome} className="flex flex-col md:flex-row md:items-end gap-4">
+          <div className="w-full md:w-44">
             <label className="block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2">YOUR WEIGHT (LBS)</label>
             <input
               type="number"
               step="0.1"
               min="50"
               max="400"
+              inputMode="decimal"
               value={outcomeWeight}
               onChange={e => setOutcomeWeight(e.target.value)}
               required
-              className="w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a]"
+              className="w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]"
               placeholder="155.0"
             />
           </div>
-          <div className="w-44">
+          <div className="w-full md:w-44">
             <label className="block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2">TARGET CLASS (LBS)</label>
             <input
               type="number"
+              inputMode="numeric"
               value={outcomeClass}
               onChange={e => setOutcomeClass(e.target.value)}
               required
-              className="w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a]"
+              className="w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]"
               placeholder="152"
             />
           </div>
           <button
             type="submit"
             disabled={outcomeLoading}
-            className="border border-[#d97706] text-[#d97706] font-display font-bold text-[10px] tracking-[0.25em] px-6 py-2.5 hover:bg-[#d97706]/10 transition-colors disabled:opacity-40 shrink-0"
+            className="w-full md:w-auto border border-[#d97706] text-[#d97706] font-display font-bold text-[10px] tracking-[0.25em] px-6 py-2.5 hover:bg-[#d97706]/10 transition-colors disabled:opacity-40 shrink-0 min-h-[44px]"
           >
             {outcomeLoading ? 'ANALYZING...' : 'PREDICT'}
           </button>
@@ -386,7 +388,8 @@ export default function Matches() {
       </div>
 
       {/* Match list */}
-      <div className="border border-[#1a1a1a]">
+      <div className="overflow-x-auto">
+      <div className="border border-[#1a1a1a] min-w-[520px]">
         <div className="grid grid-cols-5 px-5 py-3 border-b border-[#1a1a1a] bg-[#080808]">
           {['DATE', 'OPPONENT', 'RESULT', 'SCORE', 'TOURNAMENT'].map(h => (
             <div key={h} className="text-[10px] font-display tracking-[0.15em] text-[#444]">{h}</div>
@@ -425,6 +428,7 @@ export default function Matches() {
             </div>
           ))
         )}
+      </div>
       </div>
 
       {/* Load more */}

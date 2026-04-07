@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
 const inputClass =
-  'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a]'
+  'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
 const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
 
 export default function Profile() {
@@ -73,7 +73,7 @@ export default function Profile() {
     <div className="space-y-8">
       <h1 className="font-display font-bold text-2xl tracking-[0.2em] text-[#f0f0f0]">PROFILE</h1>
 
-      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6 max-w-md">
+      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6 max-w-md">
         <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-5">
           WRESTLER INFO
         </div>
@@ -105,6 +105,7 @@ export default function Profile() {
               onChange={e => setWeightClass(e.target.value)}
               min="50"
               max="400"
+              inputMode="numeric"
               className={inputClass}
               placeholder="152"
             />
@@ -143,7 +144,7 @@ export default function Profile() {
           <button
             type="submit"
             disabled={submitting}
-            className="px-8 py-2.5 bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] hover:bg-[#b45309] transition-colors disabled:opacity-40"
+            className="w-full md:w-auto px-8 py-2.5 bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] hover:bg-[#b45309] transition-colors disabled:opacity-40 min-h-[44px]"
           >
             {submitting ? 'SAVING...' : 'SAVE'}
           </button>

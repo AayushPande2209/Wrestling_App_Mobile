@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 const API_URL = import.meta.env.VITE_API_URL
 
 const inputClass =
-  'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a]'
+  'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
 const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
 
 const MEAL_TYPE_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', other: 'Meal' }
@@ -136,9 +136,9 @@ export default function Nutrition() {
           CUT MEAL PLANNER
         </div>
 
-        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
           <form onSubmit={handleMpSubmit} className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className={labelClass}>CURRENT WEIGHT (LBS)</label>
                 <input
@@ -146,6 +146,7 @@ export default function Nutrition() {
                   step="0.1"
                   min="50"
                   max="400"
+                  inputMode="decimal"
                   value={mpWeight}
                   onChange={e => setMpWeight(e.target.value)}
                   required
@@ -157,6 +158,7 @@ export default function Nutrition() {
                 <label className={labelClass}>TARGET CLASS (LBS)</label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   value={mpClass}
                   onChange={e => setMpClass(e.target.value)}
                   required
@@ -169,6 +171,7 @@ export default function Nutrition() {
                 <input
                   type="number"
                   min="1"
+                  inputMode="numeric"
                   value={mpDays}
                   onChange={e => setMpDays(e.target.value)}
                   required
@@ -180,7 +183,7 @@ export default function Nutrition() {
             <button
               type="submit"
               disabled={mpFetching}
-              className="bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] px-6 py-2.5 hover:bg-[#b45309] transition-colors disabled:opacity-40"
+              className="w-full md:w-auto bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] px-6 py-2.5 hover:bg-[#b45309] transition-colors disabled:opacity-40 min-h-[44px]"
             >
               {mpFetching ? 'LOADING...' : 'GET MEAL PLAN'}
             </button>
@@ -198,7 +201,7 @@ export default function Nutrition() {
             {/* Daily totals */}
             <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-5">
               <div className="font-display text-[9px] tracking-[0.2em] text-[#555] mb-4">DAILY TARGETS</div>
-              <div className="grid grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
                 {[
                   { label: 'CALORIES', value: mealPlan.daily_calories, unit: 'kcal', color: '#f0f0f0' },
                   { label: 'PROTEIN', value: mealPlan.daily_macros.protein, unit: 'g', color: '#d97706' },
@@ -227,7 +230,7 @@ export default function Nutrition() {
               </div>
             )}
             {/* Meal cards */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {mealPlan.meals.map((meal, i) => (
                 <MealCard key={i} meal={meal} />
               ))}
@@ -242,9 +245,9 @@ export default function Nutrition() {
           POST WEIGH-IN RECOVERY
         </div>
 
-        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
           <form onSubmit={handleRcSubmit} className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className={labelClass}>WEIGHT BEFORE CUT (LBS)</label>
                 <input
@@ -252,6 +255,7 @@ export default function Nutrition() {
                   step="0.1"
                   min="50"
                   max="400"
+                  inputMode="decimal"
                   value={rcBefore}
                   onChange={e => setRcBefore(e.target.value)}
                   required
@@ -266,6 +270,7 @@ export default function Nutrition() {
                   step="0.1"
                   min="50"
                   max="400"
+                  inputMode="decimal"
                   value={rcAfter}
                   onChange={e => setRcAfter(e.target.value)}
                   required
@@ -278,6 +283,7 @@ export default function Nutrition() {
                 <input
                   type="number"
                   min="1"
+                  inputMode="numeric"
                   value={rcHours}
                   onChange={e => setRcHours(e.target.value)}
                   required
@@ -289,7 +295,7 @@ export default function Nutrition() {
             <button
               type="submit"
               disabled={rcFetching}
-              className="bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] px-6 py-2.5 hover:bg-[#b45309] transition-colors disabled:opacity-40"
+              className="w-full md:w-auto bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] px-6 py-2.5 hover:bg-[#b45309] transition-colors disabled:opacity-40 min-h-[44px]"
             >
               {rcFetching ? 'LOADING...' : 'GET RECOVERY PLAN'}
             </button>
@@ -361,7 +367,7 @@ export default function Nutrition() {
             {/* Recovery meals */}
             <div>
               <div className="font-display text-[9px] tracking-[0.2em] text-[#555] mb-4">RECOVERY MEALS</div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {recovery.meals.map((meal, i) => (
                   <MealCard key={i} meal={meal} />
                 ))}

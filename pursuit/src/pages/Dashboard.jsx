@@ -166,7 +166,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <StatBox label="CURRENT WEIGHT" value={latestLog ? `${latestLog.weight} LBS` : '—'} />
         <StatBox label="WEIGHT CLASS" value={wrestler?.weight_class ? `${wrestler.weight_class} LBS` : '—'} />
         <StatBox
@@ -180,9 +180,9 @@ export default function Dashboard() {
 
       {/* Performance trend */}
       {perfTrend && (
-        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
           <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-4">PERFORMANCE TREND</div>
-          <div className="flex items-start gap-10">
+          <div className="flex flex-wrap items-start gap-6 md:gap-10">
             <div>
               <div className="text-[10px] font-display text-[#555] tracking-[0.15em] mb-1">OVERALL WIN RATE</div>
               <div className="font-mono text-2xl text-[#f0f0f0]">
@@ -209,10 +209,10 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {/* Cut analysis */}
         {prediction && (
-          <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+          <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
             <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-4">CUT ANALYSIS</div>
             <p className="font-mono text-sm text-[#ccc] leading-relaxed">{prediction.recommendation}</p>
             <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-[#1a1a1a]">
@@ -233,7 +233,7 @@ export default function Dashboard() {
         )}
 
         {/* Next event */}
-        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
           <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-4">NEXT EVENT</div>
           {nextEvent ? (
             <>
@@ -253,7 +253,7 @@ export default function Dashboard() {
 
       {/* Activity feed */}
       {feed.length > 0 && (
-        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
           <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-4">TEAM ACTIVITY — LAST 48H</div>
           <div className="space-y-2">
             {feed.map((item, i) => (
@@ -272,7 +272,7 @@ export default function Dashboard() {
       {/* Quick actions */}
       <div>
         <div className="text-[10px] font-display tracking-[0.15em] text-[#555] mb-3">QUICK ACTIONS</div>
-        <div className="flex gap-3">
+        <div className="flex flex-col md:flex-row gap-3">
           {[
             { label: 'LOG WEIGHT', to: '/weight' },
             { label: 'ADD MATCH', to: '/matches' },
@@ -281,7 +281,7 @@ export default function Dashboard() {
             <button
               key={to}
               onClick={() => navigate(to)}
-              className="px-5 py-2.5 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#888] hover:border-[#d97706] hover:text-[#d97706] transition-colors"
+              className="w-full md:w-auto px-5 py-2.5 border border-[#1e1e1e] font-display text-[10px] tracking-[0.18em] text-[#888] hover:border-[#d97706] hover:text-[#d97706] transition-colors min-h-[44px]"
             >
               {label}
             </button>

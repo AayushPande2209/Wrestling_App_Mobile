@@ -114,11 +114,13 @@ describe('Workouts', () => {
       expect(screen.getByText('WORKOUTS')).toBeInTheDocument()
     })
 
-    // Fill in exercise row
+    // Fill in exercise row — dual layout (hidden md:block / block md:hidden)
+    // renders both desktop table + mobile card in jsdom, so numeric
+    // placeholders appear twice. Target the desktop table inputs ([0]).
     await user.type(screen.getByPlaceholderText('Squat'), 'Deadlift')
-    await user.type(screen.getByPlaceholderText('3'), '4')
-    await user.type(screen.getByPlaceholderText('5'), '6')
-    await user.type(screen.getByPlaceholderText('135'), '315')
+    await user.type(screen.getAllByPlaceholderText('3')[0], '4')
+    await user.type(screen.getAllByPlaceholderText('5')[0], '6')
+    await user.type(screen.getAllByPlaceholderText('135')[0], '315')
 
     await user.click(screen.getByRole('button', { name: /log workout/i }))
 

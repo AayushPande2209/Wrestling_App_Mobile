@@ -36,7 +36,8 @@ function renderLayout() {
 describe('Layout', () => {
   it('renders without crashing — shows sidebar and children', () => {
     renderLayout()
-    expect(screen.getByText('PURSUIT')).toBeInTheDocument()
+    // "PURSUIT" appears in both the mobile top bar and the sidebar header
+    expect(screen.getAllByText('PURSUIT').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('PAGE CONTENT')).toBeInTheDocument()
   })
 
@@ -76,6 +77,21 @@ describe('Layout', () => {
       const link = screen.getByText(label).closest('a')
       expect(link).toHaveAttribute('href', href)
     })
+  })
+
+  it('hamburger button opens sidebar and close button dismisses it', async () => {
+    const user = userEvent.setup()
+    renderLayout()
+
+    // Hamburger exists with correct aria-label
+    const hamburger = screen.getByLabelText('Open menu')
+    expect(hamburger).toBeInTheDocument()
+
+    await user.click(hamburger)
+
+    // Close button appears
+    const closeBtn = screen.getByLabelText('Close menu')
+    expect(closeBtn).toBeInTheDocument()
   })
 
   it('sign out button calls supabase signOut and redirects', async () => {

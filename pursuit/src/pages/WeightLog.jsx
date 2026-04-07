@@ -194,7 +194,7 @@ export default function WeightLog() {
   })()
 
   const inputClass =
-    'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a]'
+    'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
   const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
 
   const confidenceColor = {
@@ -213,9 +213,9 @@ export default function WeightLog() {
         </p>
       )}
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Log form */}
-        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
           <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-5">LOG WEIGHT</div>
           <form onSubmit={handleLog} className="space-y-4">
             <div>
@@ -225,6 +225,7 @@ export default function WeightLog() {
                 step="0.1"
                 min="50"
                 max="400"
+                inputMode="decimal"
                 value={weight}
                 onChange={e => setWeight(e.target.value)}
                 required
@@ -275,7 +276,7 @@ export default function WeightLog() {
         </div>
 
         {/* Cut predictor */}
-        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
           <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-5">CUT PREDICTOR</div>
           <form onSubmit={handleCutPredict} className="space-y-4">
             <div>
@@ -284,6 +285,7 @@ export default function WeightLog() {
                 type="number"
                 min="50"
                 max="400"
+                inputMode="numeric"
                 value={cutTarget}
                 onChange={e => setCutTarget(e.target.value)}
                 required
@@ -296,6 +298,7 @@ export default function WeightLog() {
               <input
                 type="number"
                 min="1"
+                inputMode="numeric"
                 value={cutDays}
                 onChange={e => setCutDays(e.target.value)}
                 required
@@ -347,10 +350,10 @@ export default function WeightLog() {
       </div>
 
       {/* Weight trend predictor */}
-      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
         <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-5">WEIGHT TREND PREDICTOR</div>
-        <form onSubmit={handleWeightTrend} className="flex items-end gap-4">
-          <div className="flex-1 max-w-xs">
+        <form onSubmit={handleWeightTrend} className="flex flex-col md:flex-row md:items-end gap-4">
+          <div className="w-full md:flex-1 md:max-w-xs">
             <label className={labelClass}>TARGET DATE</label>
             <input
               type="date"
@@ -363,12 +366,12 @@ export default function WeightLog() {
           <button
             type="submit"
             disabled={trendLoading}
-            className="border border-[#d97706] text-[#d97706] font-display font-bold text-[10px] tracking-[0.25em] px-6 py-2.5 hover:bg-[#d97706]/10 transition-colors disabled:opacity-40 shrink-0"
+            className="w-full md:w-auto border border-[#d97706] text-[#d97706] font-display font-bold text-[10px] tracking-[0.25em] px-6 py-2.5 hover:bg-[#d97706]/10 transition-colors disabled:opacity-40 shrink-0 min-h-[44px]"
           >
             {trendLoading ? 'PREDICTING...' : 'PREDICT'}
           </button>
           {trendResult && (
-            <div className="flex gap-8 ml-4">
+            <div className="flex gap-8 md:ml-4">
               <div>
                 <div className="text-[10px] font-display text-[#555] tracking-[0.15em]">PREDICTED WEIGHT</div>
                 <div className="font-mono text-2xl text-[#f0f0f0] mt-1">
@@ -388,7 +391,7 @@ export default function WeightLog() {
 
       {/* Chart */}
       {!isLoading && chartData.length > 0 && (
-        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+        <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
           <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-6">
             DAILY AVERAGE — LAST {chartData.length} DAY{chartData.length !== 1 ? 'S' : ''}
           </div>
@@ -400,6 +403,7 @@ export default function WeightLog() {
                 tick={{ fill: '#555', fontSize: 10, fontFamily: 'JetBrains Mono' }}
                 axisLine={{ stroke: '#1a1a1a' }}
                 tickLine={false}
+                interval="preserveStartEnd"
               />
               <YAxis
                 tick={{ fill: '#555', fontSize: 10, fontFamily: 'JetBrains Mono' }}
@@ -408,13 +412,13 @@ export default function WeightLog() {
                 domain={['auto', 'auto']}
                 width={40}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#1e1e1e' }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#1e1e1e' }} position={{ x: 0, y: 0 }} allowEscapeViewBox={{ x: true, y: true }} />
               <Line
                 type="monotone"
                 dataKey="weight"
                 stroke="#d97706"
                 strokeWidth={2}
-                dot={{ r: 3, fill: '#d97706', strokeWidth: 0 }}
+                dot={{ r: 4, fill: '#d97706', strokeWidth: 0 }}
                 activeDot={{ r: 5, fill: '#d97706', strokeWidth: 0 }}
               />
             </LineChart>

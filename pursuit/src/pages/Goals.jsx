@@ -4,7 +4,7 @@ import { startOfWeek, endOfWeek, startOfDay, format } from 'date-fns'
 import { supabase } from '../lib/supabase'
 
 const inputClass =
-  'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a]'
+  'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
 const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
 
 const GOAL_TYPES = [
@@ -377,11 +377,11 @@ export default function Goals() {
       </div>
 
       {/* New goal form */}
-      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
         <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-5">ADD GOAL</div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>GOAL TYPE</label>
               <select
@@ -440,6 +440,7 @@ export default function Goals() {
                 required
                 min="1"
                 max="14"
+                inputMode="numeric"
                 placeholder="e.g. 3"
                 className={inputClass}
               />
@@ -478,7 +479,7 @@ export default function Goals() {
           <button
             type="submit"
             disabled={submitting}
-            className="bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] px-6 py-2.5 hover:bg-[#b45309] transition-colors disabled:opacity-40"
+            className="w-full md:w-auto bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] px-6 py-2.5 hover:bg-[#b45309] transition-colors disabled:opacity-40 min-h-[44px]"
           >
             {submitting ? 'SAVING...' : 'ADD GOAL'}
           </button>

@@ -12,7 +12,7 @@ const CONTEXT_STYLE = {
 }
 
 const inputClass =
-  'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a]'
+  'w-full bg-[#060606] border border-[#1e1e1e] text-[#f0f0f0] font-mono text-sm px-3 py-2.5 outline-none focus:border-[#d97706] transition-colors placeholder-[#2a2a2a] min-h-[44px]'
 const labelClass = 'block text-[10px] tracking-[0.15em] font-display text-[#555] mb-2'
 
 export default function Notes() {
@@ -126,10 +126,10 @@ export default function Notes() {
       <h1 className="font-display font-bold text-2xl tracking-[0.2em] text-[#f0f0f0]">NOTES</h1>
 
       {/* Form */}
-      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-6">
+      <div className="border border-[#1a1a1a] bg-[#0a0a0a] p-4 md:p-6">
         <div className="text-[10px] font-display tracking-[0.15em] text-[#d97706] mb-5">NEW NOTE</div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>CONTEXT</label>
               <select
@@ -184,7 +184,7 @@ export default function Notes() {
           <button
             type="submit"
             disabled={submitting}
-            className="px-8 py-2.5 bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] hover:bg-[#b45309] transition-colors disabled:opacity-40"
+            className="w-full md:w-auto px-8 py-2.5 bg-[#d97706] text-[#0a0a0a] font-display font-bold text-[10px] tracking-[0.25em] hover:bg-[#b45309] transition-colors disabled:opacity-40 min-h-[44px]"
           >
             {submitting ? 'SAVING...' : 'SAVE NOTE'}
           </button>
@@ -192,7 +192,7 @@ export default function Notes() {
       </div>
 
       {/* Filter */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <span className="text-[10px] font-display tracking-[0.15em] text-[#444]">FILTER:</span>
         {['all', ...CONTEXTS].map(f => (
           <button
