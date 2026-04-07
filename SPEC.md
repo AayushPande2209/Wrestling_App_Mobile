@@ -62,6 +62,8 @@ Browser (React)
                                                 POST /predict/weight-trend
                                                 GET  /predict/performance-trend
                                                 POST /predict/match-outcome
+                                                POST /predict/meal-plan
+                                                POST /predict/recovery-protocol
                                                         │
                                                         └── supabase-py (service role)
                                                             reads weight_logs, matches
@@ -70,7 +72,7 @@ Browser (React)
 **Key rules:**
 - React never calls FastAPI for CRUD — only for predictions.
 - FastAPI never writes to Supabase — read only, using the service role key.
-- All FastAPI endpoints validate the Supabase JWT (`HS256`, audience `authenticated`). The wrestler's UUID is extracted from `payload["sub"]`.
+- All FastAPI endpoints validate the Supabase JWT via JWKS (fetches the public key from Supabase's `/.well-known/jwks.json`; accepts `ES256` and `HS256`, audience `authenticated`). The wrestler's UUID is extracted from `payload["sub"]`.
 - If FastAPI is unreachable, prediction UI is hidden silently. No page breaks.
 
 ---
@@ -97,6 +99,7 @@ Browser (React)
 | `id` | `uuid` | PK, default `gen_random_uuid()` |
 | `wrestler_id` | `uuid` | FK → `wrestlers(id)` |
 | `weight` | `float` | NOT NULL |
+| `time_of_day` | `text` | NOT NULL; `'morning'` \| `'before_practice'` \| `'after_practice'` \| `'night'` |
 | `note` | `text` | nullable |
 | `logged_at` | `timestamptz` | default `now()` |
 
@@ -171,7 +174,9 @@ Used as a normalized lookup for both `matches.tournament_id` and `goals.tourname
 |--------|------|-------------|
 | `id` | `uuid` | PK, default `gen_random_uuid()` |
 | `wrestler_id` | `uuid` | FK → `wrestlers(id)`, NOT NULL |
+| `workout_type` | `text` | NOT NULL, default `'lifting'`; `'lifting'` \| `'practice'` \| `'cardio'` \| `'other'` |
 | `workout_date` | `date` | NOT NULL |
+| `duration_minutes` | `int` | nullable (used for practice/cardio/other types) |
 | `notes` | `text` | nullable |
 | `created_at` | `timestamptz` | default `now()` |
 
@@ -432,7 +437,7 @@ Called from the frontend via `supabase.rpc('insert_lifting_workout', {...})`. On
 **Tables:** `auth.users` (via Supabase Auth), `wrestlers` (insert on sign-up)  
 **FastAPI:** None
 
-Toggle between sign-in and sign-up. Email + password only. On sign-up: calls `supabase.auth.signUp` then inserts a row into `wrestlers` with `id = user.id`, `email = email`, and `name = null`. On success, redirects to `/dashboard`.
+Toggle between sign-in and sign-up. Email + password only. On sign-up: calls `supabase.auth.signUp` then inserts a row into `wrestlers` with `id = user.id`, `email = email`, and `name = email` (temporary default). On success, redirects to `/profile/setup` for first-time onboarding. On sign-in, redirects to `/dashboard`.
 
 **Duplicate email detection:** Supabase returns a fake-success response (no error, `data.user.identities` is an empty array) when signing up with an already-registered email to prevent enumeration. Auth.jsx checks for this case and displays: "An account with this email already exists. Try signing in instead."
 
@@ -448,6 +453,19 @@ Toggle between sign-in and sign-up. Email + password only. On sign-up: calls `su
 **FastAPI:** None
 
 Public route (not wrapped in ProtectedRoute). Landed on from the emailed password-reset link, which appends a recovery token to the URL hash. Supabase SDK processes the hash automatically and fires the `PASSWORD_RECOVERY` auth event; the page listens for this event via `onAuthStateChange` and shows the new-password form once the temporary session is live. On submit, calls `supabase.auth.updateUser({ password })`. On success, navigates to `/dashboard`.
+
+---
+
+### `/profile/setup` — Profile Setup (Onboarding)
+**Status:** Built  
+**Tables:** `wrestlers` (read and update `name`, `weight_class`)  
+**FastAPI:** None
+
+One-time onboarding page shown after sign-up. Wrapped in `ProtectedRoute` but not in `Layout` (no sidebar). On mount, checks if the wrestler already has a real name set (i.e. `name` does not equal `email`); if so, redirects to `/dashboard` immediately — ensures this page is only shown once.
+
+**Form:** Name input (text, required), weight class input (number, optional). Submit button ("Get started") updates the `wrestlers` row. On success, redirects to `/dashboard`. A "Skip for now" link below the form navigates to `/dashboard` without updating — the wrestler can set their name later in `/profile`.
+
+**Email privacy:** The wrestler's email is used as the temporary `name` on sign-up, but is never displayed in the UI. All components that show a wrestler's name use a `safeName` pattern: if `name` contains `@`, display "Wrestler" instead. This prevents email leakage in the sidebar, Dashboard greeting, activity feed, and Board page.
 
 ---
 
@@ -506,7 +524,7 @@ Add event form: title, type (practice/tournament/dual meet/other), start time, o
 ---
 
 ### `/records` — Personal Records
-**Status:** Planned  
+**Status:** Built  
 **Tables:** `matches` (read all)  
 **FastAPI:** None
 
@@ -515,7 +533,7 @@ Computes personal records automatically from the wrestler's existing match data 
 ---
 
 ### `/timeline` — Season Timeline
-**Status:** Planned  
+**Status:** Built  
 **Tables:** `weight_logs` (read all), `matches` (read all)  
 **FastAPI:** None
 
@@ -524,7 +542,7 @@ Visual scrollable timeline showing weight logs and match results together on one
 ---
 
 ### `/board` — Team Weight Board
-**Status:** Planned  
+**Status:** Built  
 **Tables:** `wrestlers` (read all where `show_on_board = true`)  
 **FastAPI:** None
 
@@ -540,11 +558,13 @@ Public-within-the-club leaderboard showing all wrestlers who have opted in via t
 **FastAPI:** None  
 **RPC:** `insert_lifting_workout` (new workout creation)
 
-Lifting workout logger. The form has a workout date, optional notes field, and a dynamic exercise table with columns: exercise name (text), weight (lbs), sets, reps. An "Add row" button appends a new empty row; each row has a remove button. Minimum 1 exercise required to submit.
+Workout logger supporting multiple types. The user first selects a workout type (lifting, practice, cardio, other) from a button group.
 
-**New workout:** Calls `insert_lifting_workout` RPC for atomic insert (workout + all exercises in a single transaction). **Edit workout:** Re-opens the form pre-filled with existing data. Updates the workout row directly, then deletes all existing exercises and re-inserts new ones (3 separate calls — non-transactional, acceptable trade-off). **Delete:** Confirmation dialog, then deletes the workout row (exercises cascade).
+**Lifting form:** Workout date, optional notes, and a dynamic exercise table with columns: exercise name (text), weight (lbs), sets, reps. An "Add row" button appends a new empty row; each row has a remove button. Minimum 1 exercise required to submit. **Practice/Cardio/Other forms:** Workout date, duration (minutes, required), and optional notes — no exercise rows.
 
-Below the form: paginated list of past workouts (15 per page), ordered by `workout_date` descending. Each row shows date, exercise count, and notes preview. Clicking a row expands it to show full exercise details — exercises are fetched on demand via a separate React Query call (`queryKey: ['workout_exercises', workout.id]`, `staleTime: 60000`) to avoid loading N exercises × 15 workouts eagerly.
+**New lifting workout:** Calls `insert_lifting_workout` RPC for atomic insert (workout + all exercises in a single transaction). Non-lifting types use a direct `workouts` insert (no exercises). **Edit workout:** Re-opens the form pre-filled with existing data. For lifting: updates the workout row directly, then deletes all existing exercises and re-inserts new ones (3 separate calls — non-transactional, acceptable trade-off). **Delete:** Confirmation dialog, then deletes the workout row (exercises cascade).
+
+Below the form: paginated list of past workouts (15 per page), ordered by `workout_date` descending. Each row shows date, type badge, duration (if present), exercise count (for lifting), and notes preview. Clicking a lifting workout row expands it to show full exercise details — exercises are fetched on demand via a separate React Query call (`queryKey: ['workout_exercises', workout.id]`, `staleTime: 60000`) to avoid loading N exercises × 15 workouts eagerly.
 
 **Cache invalidation:** After any create/edit/delete, invalidates both `['workouts', uid]` and `['goals', uid]` (since lifting goals depend on workout count).
 
@@ -599,13 +619,13 @@ Two sections:
 
 ## 7. Auth Rules
 
-- **Sign up:** `supabase.auth.signUp` → check `data.user.identities` (empty array = duplicate email, show error) → insert row into `wrestlers` (client-side, in `Auth.jsx`). Known race condition — see Auth page note above.
+- **Sign up:** `supabase.auth.signUp` → check `data.user.identities` (empty array = duplicate email, show error) → insert row into `wrestlers` with `name = email` as temporary default (client-side, in `Auth.jsx`) → redirect to `/profile/setup` for onboarding. Known race condition — see Auth page note above.
 - **Duplicate email:** Supabase prevents enumeration by returning a fake success. `Auth.jsx` detects the empty-identities case and surfaces a user-readable error before attempting the wrestlers insert.
 - **Forgot password:** `supabase.auth.resetPasswordForEmail(email, { redirectTo })` sends an email with a magic link pointing at `/reset-password`. The link contains a short-lived recovery token in the URL hash.
 - **Password reset:** `/reset-password` is a public route. It subscribes to `onAuthStateChange`, waits for the `PASSWORD_RECOVERY` event (fired when Supabase exchanges the URL token for a session), then calls `supabase.auth.updateUser({ password })` with the new password the wrestler enters.
 - **Session persistence:** `ProtectedRoute` calls `supabase.auth.getSession()` on mount and subscribes to `supabase.auth.onAuthStateChange` to detect expiry in real time. Session expiry redirects to `/auth` immediately.
-- **Protected routes:** All routes except `/auth` and `/reset-password` are wrapped in `ProtectedRoute`. `/` redirects to `/dashboard` if logged in. All new pages (`/records`, `/timeline`, `/board`, `/workouts`, `/goals`, `/nutrition`) follow the same pattern.
-- **FastAPI auth:** Every endpoint uses `Depends(get_current_user)`. The dependency extracts the Bearer token from the `Authorization` header and validates it with `PyJWT` using `HS256` and audience `authenticated`. `payload["sub"]` is the wrestler's UUID used to scope all DB queries.
+- **Protected routes:** All routes except `/auth` and `/reset-password` are wrapped in `ProtectedRoute`. `/` redirects to `/dashboard` if logged in. `/profile/setup` is also protected but not wrapped in `Layout` (no sidebar). All other pages (`/records`, `/timeline`, `/board`, `/workouts`, `/goals`, `/nutrition`) follow the standard `ProtectedRoute` + `Layout` pattern.
+- **FastAPI auth:** Every endpoint uses `Depends(get_current_user)`. The dependency fetches the signing key from Supabase's JWKS endpoint (`/.well-known/jwks.json`) and validates the JWT with `PyJWT` using `ES256` (primary) or `HS256` (fallback), audience `authenticated`. `payload["sub"]` is the wrestler's UUID used to scope all DB queries.
 - **RLS:** Supabase RLS ensures wrestlers can only read/write their own rows in `weight_logs`, `matches`, `notes`, and `schedules`. The frontend uses the anon key (RLS enforced). The backend uses the service role key (bypasses RLS intentionally — the JWT sub is used to manually scope all queries). **Exception for team features:** the `/board` page and activity feed need to read data from other wrestlers who have opted in (`show_on_board = true`). This requires additional RLS policies: (1) `wrestlers`: any authenticated user can `SELECT` rows where `show_on_board = true`; (2) `weight_logs`, `matches`, `schedules`: any authenticated user can `SELECT` rows whose `wrestler_id` references a wrestler with `show_on_board = true`.
 - **Service role key:** Only present in the FastAPI backend environment. Never sent to or accessible by the browser.
 

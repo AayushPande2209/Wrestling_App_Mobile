@@ -67,7 +67,7 @@ export default function Board() {
                 key={w.id}
                 className="grid grid-cols-4 px-5 py-3.5 border-b border-[#111] hover:bg-[#0d0d0d] transition-colors"
               >
-                <div className="font-mono text-sm text-[#ccc]">{w.name || '—'}</div>
+                <div className="font-mono text-sm text-[#ccc]">{w.name && !w.name.includes('@') ? w.name : '—'}</div>
                 <div className="font-mono text-sm text-[#555]">
                   {w.weight_class != null ? `${w.weight_class} LBS` : '—'}
                 </div>

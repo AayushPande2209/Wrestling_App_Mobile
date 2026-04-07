@@ -7,6 +7,36 @@
 - One item at a time. Builder does not move on until Reviewer marks it complete.
  
 ---
+- [ ] Onboarding: when a wrestler signs up, after successful auth 
+      redirect to a new `/profile/setup` page instead of `/dashboard`. 
+      This page is only shown once — if the wrestler already has a 
+      name set (not equal to their email), redirect to /dashboard.
+      
+      `/profile/setup` page:
+      - Heading: "Set up your profile"
+      - Name input (text, required, placeholder "Your name") 
+      - Weight class input (number, optional, can skip and set later)
+      - Submit button: "Get started"
+      - On submit: update wrestlers table row where id = auth.uid() 
+        setting name = entered name, weight_class = entered value if 
+        provided
+      - On success: redirect to /dashboard
+      - Skip link below the form: "Skip for now" → redirects to 
+        /dashboard without updating name
+
+      Migration: add `email` (text, nullable) column to `wrestlers` 
+      table. On sign up, insert wrestler row with 
+      id = auth.uid(), name = email (temporary default), 
+      email = email. Email should never be editable from the 
+      frontend — it is set once on sign up and never changed. 
+      RLS: wrestler can read their own email, cannot update it.
+
+      After profile setup is complete, display the wrestler's name 
+      (not email) everywhere in the app — sidebar, dashboard 
+      greeting, activity feed. Wherever name = email is currently 
+      shown as a fallback, replace with 'Wrestler' as the fallback 
+      instead so emails are never exposed in the UI.
+
 
 ## Deployment Blockers
 

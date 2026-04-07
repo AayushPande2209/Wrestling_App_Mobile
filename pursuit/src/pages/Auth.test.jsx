@@ -112,8 +112,8 @@ describe('Auth', () => {
         email: 'new@team.edu',
         password: 'password123',
       })
-      expect(mockInsert).toHaveBeenCalledWith({ id: 'new-uid', email: 'new@team.edu', name: null })
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
+      expect(mockInsert).toHaveBeenCalledWith({ id: 'new-uid', email: 'new@team.edu', name: 'new@team.edu' })
+      expect(mockNavigate).toHaveBeenCalledWith('/profile/setup')
     })
   })
 

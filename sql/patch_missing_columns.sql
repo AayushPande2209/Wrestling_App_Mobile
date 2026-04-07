@@ -361,6 +361,22 @@ create policy "habit_logs: delete own rows"
   using (wrestler_id = auth.uid());
 
 -- ─────────────────────────────────────────────────────────────
+-- wrestlers: RLS for email column
+-- email is set once on sign-up and must never be updated by the client.
+-- We achieve this by restricting which columns the update policy allows.
+-- The simplest approach: drop + recreate the update policy to exclude email.
+-- ─────────────────────────────────────────────────────────────
+drop policy if exists "wrestlers: update own row" on public.wrestlers;
+create policy "wrestlers: update own row"
+  on public.wrestlers for update
+  using (id = auth.uid())
+  with check (id = auth.uid());
+
+-- Column-level privilege: revoke UPDATE on email from the authenticated role
+-- so even if the policy passes, the column cannot be written.
+revoke update (email) on public.wrestlers from authenticated;
+
+-- ─────────────────────────────────────────────────────────────
 -- RPC: insert_lifting_workout
 -- ─────────────────────────────────────────────────────────────
 create or replace function public.insert_lifting_workout(

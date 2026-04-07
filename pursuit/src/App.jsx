@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Auth from './pages/Auth'
 import ResetPassword from './pages/ResetPassword'
+import ProfileSetup from './pages/ProfileSetup'
 import Dashboard from './pages/Dashboard'
 import WeightLog from './pages/WeightLog'
 import Matches from './pages/Matches'
@@ -22,6 +23,14 @@ export default function App() {
       <Routes>
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route
+          path="/profile/setup"
+          element={
+            <ProtectedRoute>
+              <ProfileSetup />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/"
           element={

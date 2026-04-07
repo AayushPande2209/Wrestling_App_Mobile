@@ -78,7 +78,7 @@ export default function Dashboard() {
         { data: matchData },
         { data: events },
       ] = await Promise.all([
-        supabase.from('wrestlers').select('id, name, current_weight, weight_class, show_on_board').eq('id', uid).single(),
+        supabase.from('wrestlers').select('id, name, email, current_weight, weight_class, show_on_board').eq('id', uid).single(),
         supabase.from('weight_logs').select('weight, logged_at').eq('wrestler_id', uid).order('logged_at', { ascending: false }).limit(1),
         supabase.from('weight_logs').select('logged_at').eq('wrestler_id', uid).order('logged_at', { ascending: false }).limit(90),
         supabase.from('matches').select('result').eq('wrestler_id', uid),
@@ -99,14 +99,18 @@ export default function Dashboard() {
           supabase.from('schedules').select('title, starts_at, wrestler_id, wrestlers!inner(name, show_on_board)').neq('wrestler_id', uid).gte('created_at', cutoff48h).eq('wrestlers.show_on_board', true).order('created_at', { ascending: false }).limit(20),
         ])
         const feedItems = []
+        const safeName = (raw) => {
+          if (!raw || raw.includes('@')) return 'Wrestler'
+          return raw
+        }
         for (const l of feedLogs ?? []) {
-          feedItems.push({ type: 'weight', name: l.wrestlers?.name ?? 'Teammate', text: `logged ${l.weight} lbs`, ts: l.logged_at })
+          feedItems.push({ type: 'weight', name: safeName(l.wrestlers?.name), text: `logged ${l.weight} lbs`, ts: l.logged_at })
         }
         for (const m of feedMatches ?? []) {
-          feedItems.push({ type: 'match', name: m.wrestlers?.name ?? 'Teammate', text: `${m.result === 'win' ? 'won' : m.result === 'loss' ? 'lost' : 'drew'} vs ${m.opponent_name}`, ts: m.created_at })
+          feedItems.push({ type: 'match', name: safeName(m.wrestlers?.name), text: `${m.result === 'win' ? 'won' : m.result === 'loss' ? 'lost' : 'drew'} vs ${m.opponent_name}`, ts: m.created_at })
         }
         for (const e of feedEvents ?? []) {
-          feedItems.push({ type: 'event', name: e.wrestlers?.name ?? 'Teammate', text: `added event: ${e.title}`, ts: e.starts_at })
+          feedItems.push({ type: 'event', name: safeName(e.wrestlers?.name), text: `added event: ${e.title}`, ts: e.starts_at })
         }
         feedItems.sort((a, b) => b.ts.localeCompare(a.ts))
         setFeed(feedItems.slice(0, 15))
@@ -143,6 +147,9 @@ export default function Dashboard() {
   if (loading) return <div className="font-mono text-[#444] text-xs tracking-[0.3em]">LOADING...</div>
   if (error) return <div className="font-mono text-red-400 text-sm">{error}</div>
 
+  // Show name only when it has been set to something other than the email default
+  const displayName = wrestler?.name && wrestler.name !== wrestler?.email ? wrestler.name : null
+
   const wins = matches.filter(m => m.result === 'win').length
   const losses = matches.filter(m => m.result === 'loss').length
   const rawCut = latestLog && wrestler?.weight_class ? latestLog.weight - wrestler.weight_class : null
@@ -160,8 +167,8 @@ export default function Dashboard() {
       {/* Header */}
       <div>
         <h1 className="font-display font-bold text-2xl tracking-[0.2em] text-[#f0f0f0]">DASHBOARD</h1>
-        {wrestler?.name && (
-          <p className="font-mono text-[10px] text-[#444] mt-1 tracking-[0.2em]">{wrestler.name.toUpperCase()}</p>
+        {displayName && (
+          <p className="font-mono text-[10px] text-[#444] mt-1 tracking-[0.2em]">{displayName.toUpperCase()}</p>
         )}
       </div>
 

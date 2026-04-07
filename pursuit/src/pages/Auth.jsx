@@ -31,9 +31,9 @@ export default function Auth() {
           throw new Error('An account with this email already exists. Try signing in instead.')
         }
         if (data.user) {
-          await supabase.from('wrestlers').insert({ id: data.user.id, email, name: null })
+          await supabase.from('wrestlers').insert({ id: data.user.id, email, name: email })
         }
-        navigate('/dashboard')
+        navigate('/profile/setup')
       } else if (mode === 'forgot') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
