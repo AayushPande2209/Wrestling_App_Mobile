@@ -15,6 +15,7 @@ vi.mock('react-router-dom', async () => {
 const mockSignUp = vi.fn()
 const mockSignIn = vi.fn()
 const mockInsert = vi.fn()
+const mockUpsert = vi.fn()
 const mockResetPassword = vi.fn()
 
 vi.mock('../lib/supabase', () => ({
@@ -29,14 +30,22 @@ vi.mock('../lib/supabase', () => ({
         mockInsert(payload)
         return Promise.resolve({ error: null })
       },
+      upsert: (payload, opts) => {
+        mockUpsert(payload, opts)
+        return Promise.resolve({ error: null })
+      },
     }),
   },
 }))
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // Default: session present (email confirmation disabled / local dev)
   mockSignUp.mockResolvedValue({
-    data: { user: { id: 'new-uid', identities: [{ id: 'id-1' }] } },
+    data: {
+      user: { id: 'new-uid', identities: [{ id: 'id-1' }] },
+      session: { access_token: 'tok' },
+    },
     error: null,
   })
   mockSignIn.mockResolvedValue({ data: {}, error: null })
@@ -184,6 +193,60 @@ describe('Auth', () => {
     // Should not insert wrestler row or navigate
     expect(mockInsert).not.toHaveBeenCalled()
     expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it('sign up — confirmation required shows message instead of navigating', async () => {
+    mockSignUp.mockResolvedValueOnce({
+      data: {
+        user: { id: 'new-uid', identities: [{ id: 'id-1' }] },
+        session: null,
+      },
+      error: null,
+    })
+    const user = userEvent.setup()
+    renderAuth()
+
+    await user.click(screen.getByRole('button', { name: /^sign up$/i }))
+    await user.type(screen.getByPlaceholderText('wrestler@team.edu'), 'new@team.edu')
+    await user.type(getPasswordInput(), 'password123')
+    await user.click(getSubmitButton())
+
+    await waitFor(() => {
+      expect(screen.getByText('Check your email to confirm your account, then sign in.')).toBeInTheDocument()
+    })
+    expect(mockUpsert).toHaveBeenCalledWith(
+      { id: 'new-uid', email: 'new@team.edu', name: 'new@team.edu' },
+      { onConflict: 'id', ignoreDuplicates: true },
+    )
+    expect(mockNavigate).not.toHaveBeenCalled()
+    // Submit button hidden — replaced by confirmation message
+    expect(getSubmitButton()).toBeNull()
+  })
+
+  it('sign up — switching tabs clears confirmation message', async () => {
+    mockSignUp.mockResolvedValueOnce({
+      data: {
+        user: { id: 'new-uid', identities: [{ id: 'id-1' }] },
+        session: null,
+      },
+      error: null,
+    })
+    const user = userEvent.setup()
+    renderAuth()
+
+    await user.click(screen.getByRole('button', { name: /^sign up$/i }))
+    await user.type(screen.getByPlaceholderText('wrestler@team.edu'), 'new@team.edu')
+    await user.type(getPasswordInput(), 'password123')
+    await user.click(getSubmitButton())
+
+    await waitFor(() => {
+      expect(screen.getByText(/Check your email to confirm/)).toBeInTheDocument()
+    })
+
+    // Switch to sign-in tab — confirmation message should clear
+    await user.click(screen.getByRole('button', { name: /^sign in$/i }))
+    expect(screen.queryByText(/Check your email to confirm/)).not.toBeInTheDocument()
+    expect(getSubmitButton().textContent).toBe('SIGN IN')
   })
 
   it('forgot password — link appears on sign-in tab only', async () => {

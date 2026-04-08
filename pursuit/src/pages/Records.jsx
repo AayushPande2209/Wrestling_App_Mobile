@@ -26,7 +26,7 @@ function computeRecords(matches) {
   // so "fastest" is not computable; we surface the most recent instead.
   const pins = matches.filter(m => m.win_type === 'pin')
   const mostRecentPin = pins.length > 0
-    ? { opponent: pins[0].opponent_name, date: pins[0].match_date, tournament: pins[0].tournament }
+    ? { opponent: pins[0].opponent_name, date: pins[0].match_date, tournament: pins[0].tournaments?.name ?? pins[0].tournament }
     : null
 
   // Biggest point differential — parse score "A-B" → |A-B|
@@ -61,10 +61,11 @@ function computeRecords(matches) {
   // Best tournament — most wins at a single named tournament
   const byTournament = {}
   for (const m of matches) {
-    if (!m.tournament) continue
-    if (!byTournament[m.tournament]) byTournament[m.tournament] = { wins: 0, losses: 0 }
-    if (m.result === 'win') byTournament[m.tournament].wins++
-    else if (m.result === 'loss') byTournament[m.tournament].losses++
+    const tName = m.tournaments?.name ?? m.tournament
+    if (!tName) continue
+    if (!byTournament[tName]) byTournament[tName] = { wins: 0, losses: 0 }
+    if (m.result === 'win') byTournament[tName].wins++
+    else if (m.result === 'loss') byTournament[tName].losses++
   }
   let bestTournament = null
   for (const [name, rec] of Object.entries(byTournament)) {
@@ -90,7 +91,7 @@ export default function Records() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('matches')
-        .select('id, match_date, opponent_name, result, score, win_type, tournament')
+        .select('id, match_date, opponent_name, result, score, win_type, tournament, tournaments(name)')
         .eq('wrestler_id', uid)
         .order('match_date', { ascending: false })
       if (error) throw error

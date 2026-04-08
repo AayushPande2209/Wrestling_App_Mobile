@@ -163,6 +163,41 @@ describe('Records', () => {
     })
   })
 
+  it('tournament FK join takes precedence over legacy text', async () => {
+    supabase.from = () => ({
+      select: () => makeBuilder({
+        data: [
+          { id: 'f1', match_date: '2026-03-01', opponent_name: 'A', result: 'win', score: '5-0', win_type: 'pin', tournament: 'Legacy Name', tournaments: { name: 'FK Name' } },
+          { id: 'f2', match_date: '2026-03-02', opponent_name: 'B', result: 'win', score: '3-1', win_type: 'decision', tournament: 'Legacy Name', tournaments: { name: 'FK Name' } },
+        ],
+        error: null,
+      }),
+    })
+
+    renderWithClient(<Records />)
+    await waitFor(() => {
+      // Best tournament card should show the FK name, not legacy text
+      expect(screen.getByText('FK Name')).toBeInTheDocument()
+      expect(screen.queryByText('Legacy Name')).not.toBeInTheDocument()
+    })
+  })
+
+  it('falls back to legacy tournament text when FK join is null', async () => {
+    supabase.from = () => ({
+      select: () => makeBuilder({
+        data: [
+          { id: 'g1', match_date: '2026-03-01', opponent_name: 'C', result: 'win', score: '4-0', win_type: 'pin', tournament: 'Old Tourney', tournaments: null },
+        ],
+        error: null,
+      }),
+    })
+
+    renderWithClient(<Records />)
+    await waitFor(() => {
+      expect(screen.getByText('Old Tourney')).toBeInTheDocument()
+    })
+  })
+
   it('auth — no crash if no session', async () => {
     supabase.auth.getSession.mockResolvedValueOnce({ data: { session: null } })
     renderWithClient(<Records />)

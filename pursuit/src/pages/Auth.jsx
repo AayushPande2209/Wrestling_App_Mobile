@@ -9,12 +9,14 @@ export default function Auth() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [forgotSent, setForgotSent] = useState(false)
+  const [signupSent, setSignupSent] = useState(false)
   const navigate = useNavigate()
 
   function switchMode(next) {
     setMode(next)
     setError(null)
     setForgotSent(false)
+    setSignupSent(false)
   }
 
   async function handleSubmit(e) {
@@ -30,10 +32,25 @@ export default function Auth() {
         if (data.user?.identities?.length === 0) {
           throw new Error('An account with this email already exists. Try signing in instead.')
         }
-        if (data.user) {
-          await supabase.from('wrestlers').insert({ id: data.user.id, email, name: email })
+        // If email confirmation is disabled (e.g. local dev), session is
+        // available immediately — navigate directly to profile setup.
+        // If confirmation is required, show a message and let the user
+        // confirm their email; ProtectedRoute will redirect to /profile/setup
+        // after they sign in for the first time.
+        if (data.session) {
+          if (data.user) {
+            await supabase.from('wrestlers').insert({ id: data.user.id, email, name: email })
+          }
+          navigate('/profile/setup')
+        } else {
+          // Confirmation email sent — insert wrestler row optimistically so
+          // it exists when they land after confirming. Use upsert to avoid
+          // duplicate key errors if the row was already created.
+          if (data.user) {
+            await supabase.from('wrestlers').upsert({ id: data.user.id, email, name: email }, { onConflict: 'id', ignoreDuplicates: true })
+          }
+          setSignupSent(true)
         }
-        navigate('/profile/setup')
       } else if (mode === 'forgot') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
@@ -149,6 +166,10 @@ export default function Auth() {
             {forgotSent ? (
               <p className="text-[11px] font-mono text-green-500 border border-green-900/50 bg-green-950/20 px-3 py-2">
                 Check your email for a reset link.
+              </p>
+            ) : signupSent ? (
+              <p className="text-[11px] font-mono text-green-500 border border-green-900/50 bg-green-950/20 px-3 py-2">
+                Check your email to confirm your account, then sign in.
               </p>
             ) : (
               <button

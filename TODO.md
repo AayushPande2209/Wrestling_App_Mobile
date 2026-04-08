@@ -112,4 +112,30 @@
       one page doesn't blank the entire app. Show a simple 
       "Something went wrong" message with a refresh button instead.
 
-_Last updated by: Reviewer — 2026-04-07 (all items complete, 136 tests across 18 files)_
+- [ ] `Records.jsx` uses legacy `tournament` text field in its query 
+      instead of `tournament_id` FK + `tournaments(name)` join. 
+      Matches.jsx already uses the FK pattern. Records should match: 
+      `.select('*, tournaments(name)')` and display 
+      `r.tournaments?.name` instead of `r.tournament`.
+
+- [ ] `sql/patch_missing_columns.sql` RPC `insert_lifting_workout` 
+      omits explicit `workout_type = 'lifting'` column assignment 
+      in the INSERT — it relies on the table default. The canonical 
+      `sql/schema.sql` version includes it explicitly. Add 
+      `workout_type = 'lifting'` to the patch RPC for consistency.
+
+- [ ] Auth sign-up flow does not tell the user to confirm their 
+      email. After `supabase.auth.signUp`, the code immediately 
+      navigates to `/profile/setup` (Auth.jsx:36). If Supabase 
+      email confirmation is enabled (default), the session won't 
+      be valid until the user clicks the confirmation link — so 
+      `/profile/setup` will fail or redirect back to login.
+      
+      Fix: after successful sign-up, show a confirmation message 
+      ("Check your email to confirm your account") instead of 
+      navigating away. Similar to the forgot-password `forgotSent` 
+      pattern already in Auth.jsx. Navigation to `/profile/setup` 
+      should happen after the user confirms and signs in for the 
+      first time.
+
+_Last updated by: Planner — 2026-04-08 (added email confirmation item)_

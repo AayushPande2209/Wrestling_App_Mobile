@@ -393,8 +393,8 @@ declare
   v_wrestler_id uuid := auth.uid();
   ex jsonb;
 begin
-  insert into public.workouts (wrestler_id, workout_date, notes)
-  values (v_wrestler_id, p_workout_date, p_notes)
+  insert into public.workouts (wrestler_id, workout_type, workout_date, notes)
+  values (v_wrestler_id, 'lifting', p_workout_date, p_notes)
   returning id into v_workout_id;
 
   for ex in select * from jsonb_array_elements(p_exercises)

@@ -29,10 +29,11 @@ const TIME_OF_DAY_LABELS = {
 
 function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
-  const { date, entries } = payload[0].payload
+  const { date, weight, entries } = payload[0].payload
   return (
     <div className="bg-[#0a0a0a] border border-[#1e1e1e] p-3 min-w-[160px]">
-      <div className="font-mono text-[10px] text-[#aaa] tracking-[0.1em] mb-2">{date}</div>
+      <div className="font-mono text-[10px] text-[#aaa] tracking-[0.1em] mb-1">{date}</div>
+      <div className="font-mono text-xs text-[#d97706] font-bold mb-2">Avg weight: {weight} LBS</div>
       {entries.map((e, i) => (
         <div key={i} className="mb-1.5 last:mb-0">
           <div className="font-mono text-xs text-[#f0f0f0]">
@@ -223,7 +224,7 @@ export default function WeightLog() {
               <input
                 type="number"
                 step="0.1"
-                min="50"
+                min="20"
                 max="400"
                 inputMode="decimal"
                 value={weight}
@@ -283,7 +284,7 @@ export default function WeightLog() {
               <label className={labelClass}>TARGET CLASS (LBS)</label>
               <input
                 type="number"
-                min="50"
+                min="20"
                 max="400"
                 inputMode="numeric"
                 value={cutTarget}
