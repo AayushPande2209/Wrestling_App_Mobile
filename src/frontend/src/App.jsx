@@ -14,6 +14,8 @@ import Profile from './pages/Profile'
 import Records from './pages/Records'
 import Timeline from './pages/Timeline'
 import Board from './pages/Board'
+import Coach from './pages/Coach'
+import Logs from './pages/Logs'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -40,10 +42,26 @@ export default function App() {
           }
         />
         <Route
+          path="/coach"
+          element={
+            <ProtectedRoute>
+              <Layout><Coach /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
               <Layout><Dashboard /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/logs"
+          element={
+            <ProtectedRoute>
+              <Layout><Logs /></Layout>
             </ProtectedRoute>
           }
         />

@@ -138,4 +138,136 @@
       should happen after the user confirms and signs in for the 
       first time.
 
-_Last updated by: Planner — 2026-04-08 (added email confirmation item)_
+---
+
+## UX Improvements (Wrestler Feedback)
+
+_Findings from a full UX audit roleplaying a 16-year-old high school 
+wrestler at Pursuit Wrestling Club. Ordered by impact._
+
+### High Priority — Daily Use Pain Points
+
+- [ ] **Dashboard: make "TO CUT" the hero number.** Currently it's 
+      the same size as every other StatBox in a 5-col grid. On 
+      mobile (2-col) it's buried in the third row. Change: make 
+      "TO CUT" a full-width banner at the top of the dashboard 
+      with a large font (text-5xl+), showing the number in amber 
+      when cutting, green "ON WEIGHT" when at/below class. Move 
+      the other 4 stats (current weight, weight class, record, 
+      streak) into a smaller row below it.
+
+- [ ] **Dashboard: move quick actions above the fold.** LOG WEIGHT, 
+      ADD MATCH, ADD NOTE buttons are at the very bottom of the 
+      page. On mobile you have to scroll past stats, performance 
+      trend, cut analysis, next event, and activity feed to reach 
+      them. Move them immediately below the hero stat row, before 
+      any prediction cards.
+
+- [ ] **Weight log: default time-of-day to "morning."** The 
+      time_of_day select has no default (`value=""`) so it's a 
+      required tap every single log. Most wrestlers weigh first 
+      thing in the morning. Default to `'morning'` in the 
+      `useState` initializer. User can still change it.
+
+- [ ] **Weight log: pre-fill cut predictor from profile.** The cut 
+      predictor form on the weight log page asks for "TARGET 
+      CLASS" every time, but this is already stored in 
+      `wrestlers.weight_class`. Pre-fill `cutTarget` from the 
+      wrestler's profile data (fetch alongside logs). User can 
+      override.
+
+- [ ] **Matches: persist tournament + date across sequential adds.** 
+      After a tournament day (3-2 = 5 matches), the form resets 
+      tournament and date on each submit. After submit, keep 
+      `tournamentId` and `matchDate` at their current values so 
+      the wrestler only needs to enter opponent, result, and score 
+      for the next match. Add a visible "RESET FORM" link to 
+      clear all fields when done.
+
+- [ ] **Weight class: use a standard dropdown instead of free-form 
+      number input.** Wrestling has fixed weight classes. Replace 
+      the `<input type="number">` for weight class with a 
+      `<select>` dropdown in three locations: ProfileSetup.jsx, 
+      Profile.jsx, and the cut predictor on WeightLog.jsx. High 
+      school classes: 106, 113, 120, 126, 132, 138, 144, 150, 
+      157, 165, 175, 190, 215, 285. Include an "Other" option 
+      that reveals a number input for non-standard classes 
+      (youth, college, freestyle).
+
+### Medium Priority — Weekly Use Improvements
+
+- [ ] **Matches: add edit and delete.** Currently matches cannot be 
+      modified after creation. Add an edit button on each match 
+      row (re-opens form pre-filled, like workouts) and a delete 
+      button with confirmation modal (same pattern as 
+      Workouts.jsx `pendingDelete`).
+
+- [ ] **Nutrition: swap section order — recovery first, meal plan 
+      second.** Recovery protocol is the killer feature for 
+      wrestlers (step-by-step rehydration plan after weigh-ins). 
+      It's currently buried below the meal planner. Move "POST 
+      WEIGH-IN RECOVERY" above "CUT MEAL PLANNER" so it's the 
+      first thing a wrestler sees.
+
+- [ ] **Dashboard: add empty state guidance for new users.** When a 
+      wrestler first signs up, the dashboard shows dashes for 
+      every stat and "No upcoming events." Add contextual prompts: 
+      - If no weight logs: "Log your first weight to start 
+        tracking your cut" with a link to /weight
+      - If no matches: "Add a match to build your record" with 
+        a link to /matches
+      - If no weight_class set: "Set your weight class in Profile 
+        to enable cut analysis" with a link to /profile
+
+- [ ] **Notes: add search.** Notes page has no way to find old 
+      notes. Add a text input at the top of the notes list that 
+      client-side filters `allNotes` by substring match on 
+      `note.body` (case-insensitive). No backend changes needed.
+
+- [ ] **Sidebar: group navigation items.** 12 flat nav links is 
+      overwhelming. Group into sections with subtle headers: 
+      DAILY (Dashboard, Weight, Workouts), COMPETE (Matches, 
+      Records, Timeline), PLAN (Goals, Schedule, Nutrition, 
+      Notes), TEAM (Board), and ACCOUNT (Profile) at the bottom. 
+      Headers are non-clickable `text-[9px] text-[#333]` labels.
+
+- [ ] **Goals: make progress bar more visible.** Current bar is 
+      `h-1` (4px). Increase to `h-2` (8px) and add a percentage 
+      label inside the bar when width >= 20%. This makes progress 
+      feel tangible instead of invisible.
+
+### Lower Priority — Polish
+
+- [ ] **Auth: add a tagline explaining what the app does.** Below 
+      "WRESTLER TRAINING SYSTEM" on the auth page, add a one-line 
+      value prop: "Track your weight, matches, and training — get 
+      AI-powered cut plans and recovery protocols." A wrestler 
+      should know what they're signing up for.
+
+- [ ] **Records: fix career summary grid on mobile.** The career 
+      summary section uses `grid-cols-4` unconditionally. On a 
+      phone, 4 columns of 2xl numbers are cramped and may 
+      overflow. Change to `grid-cols-2 md:grid-cols-4` so mobile 
+      gets 2 rows of 2 columns.
+
+- [ ] **Match list: responsive layout on mobile.** The match list 
+      uses `min-w-[520px]` forcing horizontal scroll on phones. 
+      Replace the 5-column grid with a stacked card layout on 
+      mobile (`md:grid grid-cols-1 md:grid-cols-5`) where each 
+      match shows as: opponent name (large), result + win type 
+      badge, score, tournament, and date in a compact vertical 
+      stack.
+
+- [ ] **Dashboard: link "No upcoming events" to /schedule.** 
+      Currently it's a dead-end paragraph. Change to a clickable 
+      link: "No upcoming events — add one" that navigates to 
+      /schedule.
+
+- [ ] **Workouts: "copy last workout" for lifting.** After logging 
+      the same lifting routine repeatedly, filling in 6+ exercise 
+      rows from scratch is tedious. Add a "COPY LAST" button 
+      next to "LOG WORKOUT" that pre-fills the exercise rows from 
+      the most recent lifting workout. Fetch the latest lifting 
+      workout's exercises and populate the `rows` state.
+
+_Last updated by: Planner — 2026-04-09 (UX audit, 16 new items)_

@@ -512,6 +512,8 @@ Add note form: context (general/practice/match), optional linked match (dropdown
 
 Shows `email` (read-only, from sign-up) and editable `name`, `weight_class`, and `show_on_board` fields. The `show_on_board` toggle controls whether the wrestler appears on the `/board` team weight board and in the teammate activity feed — default is `false` (opted out). Changes saved via a `wrestlers.update()` call scoped to `name`, `weight_class`, and `show_on_board` only — email is never written from this form. Setting `weight_class` here is required for the Dashboard cut analysis card to appear. `weight_class` accepts any integer (no enum constraint — matches the DB schema). `current_weight` is not editable here; it updates automatically on every weight log insert.
 
+> **UX note:** `weight_class` should be a dropdown of standard high school classes (106, 113, 120, 126, 132, 138, 144, 150, 157, 165, 175, 190, 215, 285) with an "Other" option for non-standard (youth, college, freestyle). Currently a free-form number input.
+
 ---
 
 ### `/schedule` — Schedule
@@ -631,7 +633,25 @@ Two sections:
 
 ---
 
-## 8. Out of Scope for MVP
+## 8. Wrestler UX Reality Check
+
+> Notes from a UX audit simulating a 16-year-old high school wrestler's daily and weekly usage. These flag places where the spec describes features that don't match how wrestlers actually behave.
+
+- **Weight class is not a free-form number.** Wrestlers compete at fixed classes (HS: 106, 113, 120, 126, 132, 138, 144, 150, 157, 165, 175, 190, 215, 285). The spec describes `weight_class` as an integer with no constraint. Profile, ProfileSetup, and cut predictor all use `<input type="number">`. A dropdown of standard classes (with an "Other" escape hatch) would be faster and prevent typos.
+
+- **Match logging doesn't account for tournament batch entry.** The spec describes single-match add flow. In practice, wrestlers log 3–5 matches from the same tournament on the same day. The form resets all fields (including tournament and date) after each submit, requiring redundant re-entry. The spec should acknowledge a "batch mode" or "keep context" pattern.
+
+- **Schedule is strictly inferior to Google Calendar for end users.** The spec positions Schedule as a user-facing feature, but it has no recurring events, no reminders, no push notifications, and no phone calendar sync. Its real value is as a data source for the Dashboard's "NEXT EVENT" widget and cut predictor auto-fill. The spec should acknowledge this and consider whether the schedule form UX is worth the nav slot, or if it should be simplified to just "When is your next weigh-in?"
+
+- **Recovery protocol is the highest-value feature but is buried.** The spec lists meal-plan first and recovery-protocol second in both §5 and §6. Wrestler feedback: the recovery protocol (step-by-step rehydration timeline after weigh-ins) is the single most unique and useful feature — it should be the primary section on the Nutrition page.
+
+- **"TO CUT" should be the dashboard hero metric.** The spec describes the dashboard as a grid of equal stat boxes. For a wrestler mid-season, "how much do I need to cut" is the #1 question they open the app to answer. It should dominate the viewport, not share equal billing with record and streak.
+
+- **Notes are primarily useful as post-match analysis, not general journaling.** The spec describes notes with three contexts (general/practice/match) and an optional match link. In practice, the "linked match" feature is the differentiator — without it, wrestlers would just text their coach. The spec should emphasize the match-linked analysis use case and note that general notes compete with iMessage/Notes.app.
+
+---
+
+## 9. Out of Scope for MVP
 
 The following are explicitly not being built:
 
