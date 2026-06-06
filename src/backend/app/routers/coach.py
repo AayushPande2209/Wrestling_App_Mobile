@@ -188,9 +188,11 @@ def coach_chat(
         )
         welcome_text = welcome_resp.content[0].text
 
-        supabase.table("coach_messages").insert(
-            {"wrestler_id": wrestler_id, "role": "assistant", "content": welcome_text}
-        ).execute()
+        # Persist both turns so history is always user → assistant order.
+        supabase.table("coach_messages").insert([
+            {"wrestler_id": wrestler_id, "role": "user",      "content": welcome_user_msg},
+            {"wrestler_id": wrestler_id, "role": "assistant", "content": welcome_text},
+        ]).execute()
 
         return CoachChatResponse(response=welcome_text)
 
@@ -283,9 +285,16 @@ def coach_chat(
     )
 
     # ── Call Claude — history + new user message ────────────────────────────
+    # Claude requires messages to start with role "user". Drop any leading
+    # assistant turns from the history window (defensive guard — should not
+    # happen after the onboarding fix above, but protects against stale DB data).
+    trimmed = list(history)
+    while trimmed and trimmed[0]["role"] != "user":
+        trimmed.pop(0)
+
     claude_messages = [
         {"role": msg["role"], "content": msg["content"]}
-        for msg in history
+        for msg in trimmed
     ] + [{"role": "user", "content": body.message}]
 
     response = _claude.messages.create(
