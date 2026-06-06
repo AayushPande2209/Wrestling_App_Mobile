@@ -96,9 +96,9 @@ export default function Coach() {
     return res.json()
   }
 
-  async function handleOnboardingNext() {
+  async function handleOnboardingNext(skipVal) {
     const q = ONBOARDING_QUESTIONS[step]
-    const value = onboardingInput.trim()
+    const value = skipVal !== undefined ? skipVal : onboardingInput.trim()
     if (!value && !q.optional) return
     const updated = { ...answers, [q.key]: value }
     setAnswers(updated)
@@ -189,7 +189,7 @@ export default function Coach() {
             </Text>
           </TouchableOpacity>
           {isLast && q.optional && !onboardingLoading && (
-            <TouchableOpacity onPress={() => { setOnboardingInput(''); handleOnboardingNext() }} style={s.skipBtn}>
+            <TouchableOpacity onPress={() => handleOnboardingNext('')} style={s.skipBtn}>
               <Text style={s.skipText}>Skip</Text>
             </TouchableOpacity>
           )}
@@ -220,6 +220,25 @@ export default function Coach() {
         )}
       </View>
 
+      {/* Phase badge */}
+      {(() => {
+        let label, color, bg
+        if (onWeight) {
+          label = 'MAINTENANCE MODE'; color = '#4ade80'; bg = '#1a2a1a'
+        } else if (daysOut === null) {
+          return null
+        } else if (daysOut === 0) {
+          label = 'SAME-DAY CUT'; color = '#e24a4a'; bg = 'rgba(226,74,74,0.12)'
+        } else {
+          label = 'LEAD-UP PHASE — DIET CUT'; color = '#e8712a'; bg = '#1e1208'
+        }
+        return (
+          <View style={[s.phaseBadge, { backgroundColor: bg }]}>
+            <Text style={[s.phaseBadgeText, { color }]}>{label}</Text>
+          </View>
+        )
+      })()}
+
       {/* Messages */}
       <ScrollView ref={scrollRef} style={s.messages} contentContainerStyle={s.messagesContent}>
         {messages.length === 0 && (
@@ -243,6 +262,8 @@ export default function Coach() {
           <Text style={s.errorBannerText}>{sendError} — try again</Text>
         </View>
       )}
+
+      <Text style={s.disclaimer}>Not medical advice. Consult a doctor or certified athletic trainer.</Text>
 
       {/* Input bar */}
       <View style={s.inputBar}>
@@ -311,6 +332,9 @@ const s = StyleSheet.create({
   thinkingText: { fontSize: 13, color: '#555', fontFamily: 'monospace' },
   errorBanner: { marginHorizontal: 16, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(220,38,38,0.5)', backgroundColor: 'rgba(69,10,10,0.2)', padding: 10 },
   errorBannerText: { fontSize: 11, color: '#f87171', fontFamily: 'monospace' },
+  phaseBadge: { paddingHorizontal: 16, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
+  phaseBadgeText: { fontSize: 9, letterSpacing: 4, fontFamily: 'monospace', fontWeight: 'bold' },
+  disclaimer: { fontSize: 9, color: '#888888', fontFamily: 'monospace', textAlign: 'center', paddingVertical: 4, paddingHorizontal: 16 },
   inputBar: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1f1f1f', backgroundColor: '#0d0d0d' },
   chatInput: { flex: 1, backgroundColor: '#111', borderWidth: 1, borderColor: '#1f1f1f', color: '#f0f0f0', fontFamily: 'monospace', fontSize: 13, paddingHorizontal: 14, paddingVertical: 10, minHeight: 44 },
   sendBtn: { backgroundColor: '#e8712a', paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center', minHeight: 44 },

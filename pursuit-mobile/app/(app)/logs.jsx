@@ -4,6 +4,7 @@ import {
   StyleSheet, Alert,
 } from 'react-native'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useLocalSearchParams } from 'expo-router'
 import { format, startOfWeek, endOfWeek, startOfDay } from 'date-fns'
 import { supabase } from '../../lib/supabase'
 
@@ -786,7 +787,13 @@ function GoalsTab() {
 const TABS = ['MATCHES', 'NOTES', 'WORKOUTS', 'GOALS']
 
 export default function Logs() {
-  const [activeTab, setActiveTab] = useState('MATCHES')
+  const { tab: initialTab } = useLocalSearchParams()
+  const VALID = ['MATCHES', 'NOTES', 'WORKOUTS', 'GOALS']
+  const [activeTab, setActiveTab] = useState(VALID.includes(initialTab) ? initialTab : 'MATCHES')
+
+  useEffect(() => {
+    if (VALID.includes(initialTab)) setActiveTab(initialTab)
+  }, [initialTab])
 
   return (
     <ScrollView style={sh.root} contentContainerStyle={sh.content}>
