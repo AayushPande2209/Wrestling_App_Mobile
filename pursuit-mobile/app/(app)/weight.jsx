@@ -25,10 +25,10 @@ const C = {
 }
 
 const TIME_OF_DAY = [
-  { value: 'morning',         label: 'MORNING' },
-  { value: 'before_practice', label: 'PRE-PRACTICE' },
-  { value: 'after_practice',  label: 'POST-PRACTICE' },
-  { value: 'night',           label: 'NIGHT' },
+  { value: 'morning',         icon: 'sunny-outline',   label: 'MORNING' },
+  { value: 'before_practice', icon: 'barbell-outline', label: 'BEFORE' },
+  { value: 'after_practice',  icon: 'fitness-outline', label: 'AFTER' },
+  { value: 'night',           icon: 'moon-outline',    label: 'NIGHT' },
 ]
 
 function WeightChart({ data }) {
@@ -254,35 +254,23 @@ export default function WeightLog() {
         }
 
         <Text style={s.sectionLabel}>TIME OF DAY</Text>
-        <View style={s.todGrid}>
-          <View style={s.todRow}>
-            {TIME_OF_DAY.slice(0, 2).map(o => (
+        <View style={s.todRow}>
+          {TIME_OF_DAY.map(o => {
+            const active = timeOfDay === o.value
+            return (
               <TouchableOpacity
                 key={o.value}
                 onPress={() => setTimeOfDay(o.value)}
                 activeOpacity={0.7}
-                style={[s.todBtn, timeOfDay === o.value ? s.todBtnActive : s.todBtnInactive]}
+                style={[s.todBtn, active ? s.todBtnActive : s.todBtnInactive]}
               >
-                <Text style={[s.todBtnText, timeOfDay === o.value ? s.todBtnTextActive : s.todBtnTextInactive]}>
+                <Ionicons name={o.icon} size={22} color={active ? C.orange : '#444'} />
+                <Text style={[s.todBtnText, active ? s.todBtnTextActive : s.todBtnTextInactive]}>
                   {o.label}
                 </Text>
               </TouchableOpacity>
-            ))}
-          </View>
-          <View style={s.todRow}>
-            {TIME_OF_DAY.slice(2, 4).map(o => (
-              <TouchableOpacity
-                key={o.value}
-                onPress={() => setTimeOfDay(o.value)}
-                activeOpacity={0.7}
-                style={[s.todBtn, timeOfDay === o.value ? s.todBtnActive : s.todBtnInactive]}
-              >
-                <Text style={[s.todBtnText, timeOfDay === o.value ? s.todBtnTextActive : s.todBtnTextInactive]}>
-                  {o.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+            )
+          })}
         </View>
 
         <Text style={s.sectionLabel}>NOTE</Text>
@@ -424,14 +412,13 @@ const s = StyleSheet.create({
   loadingWheel:     { fontSize: 11, color: C.textDim, fontFamily: 'monospace', letterSpacing: 4, textAlign: 'center', paddingVertical: 16 },
 
   // Time of day
-  todGrid:          { gap: 8 },
-  todRow:           { flexDirection: 'row', gap: 8 },
-  todBtn:           { flex: 1, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderRadius: 4 },
-  todBtnActive:     { backgroundColor: C.orangeDim, borderColor: C.orange },
-  todBtnInactive:   { backgroundColor: C.surface, borderColor: C.border },
-  todBtnText:       { fontSize: 9, fontFamily: 'monospace', letterSpacing: 1.5 },
-  todBtnTextActive: { color: C.orange },
-  todBtnTextInactive:{ color: C.textDim },
+  todRow:            { flexDirection: 'row', gap: 6 },
+  todBtn:            { flex: 1, paddingVertical: 10, alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 4 },
+  todBtnActive:      { backgroundColor: C.orangeDim, borderColor: C.orange },
+  todBtnInactive:    { backgroundColor: '#141414', borderColor: '#222' },
+  todBtnText:        { fontSize: 7, fontFamily: 'monospace', letterSpacing: 1 },
+  todBtnTextActive:  { color: C.orange },
+  todBtnTextInactive:{ color: '#444' },
 
   // Note
   noteInput:        { backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 4, color: C.text, fontFamily: 'monospace', fontSize: 13, paddingHorizontal: 12, paddingVertical: 10, minHeight: 44 },
