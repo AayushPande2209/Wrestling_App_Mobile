@@ -444,10 +444,19 @@ function WorkoutsTab() {
   const [rows, setRows] = useState([{ ...EMPTY_ROW }])
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
+  const [pastExercises, setPastExercises] = useState([])
+  const [focusedRowIdx, setFocusedRowIdx] = useState(null)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setUid(session.user.id)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return
+      setUid(session.user.id)
+      const { data } = await supabase
+        .from('workout_exercises')
+        .select('name')
+        .eq('wrestler_id', session.user.id)
+        .order('name')
+      if (data) setPastExercises([...new Set(data.map(e => e.name))])
     })
   }, [])
 
@@ -569,17 +578,41 @@ function WorkoutsTab() {
           <View style={{ marginTop: 8 }}>
             <FieldLabel text="EXERCISES" />
             {rows.map((row, idx) => (
-              <View key={idx} style={sh.exerciseRow}>
-                <TextInput
-                  value={row.name}
-                  onChangeText={v => updateRow(idx, 'name', v)}
-                  style={[input.base, { flex: 1 }]}
-                  placeholder="Exercise"
-                  placeholderTextColor="#2a2a2a"
-                />
-                <TouchableOpacity onPress={() => setRows(prev => prev.length === 1 ? prev : prev.filter((_, i) => i !== idx))} style={{ paddingHorizontal: 4 }}>
-                  <Text style={{ color: '#f87171', fontSize: 16 }}>✕</Text>
-                </TouchableOpacity>
+              <View key={idx}>
+                <View style={sh.exerciseRow}>
+                  <TextInput
+                    value={row.name}
+                    onChangeText={v => updateRow(idx, 'name', v)}
+                    onFocus={() => setFocusedRowIdx(idx)}
+                    onBlur={() => setFocusedRowIdx(null)}
+                    style={[input.base, { flex: 1 }]}
+                    placeholder="Exercise"
+                    placeholderTextColor="#2a2a2a"
+                  />
+                  <TouchableOpacity onPress={() => setRows(prev => prev.length === 1 ? prev : prev.filter((_, i) => i !== idx))} style={{ paddingHorizontal: 4 }}>
+                    <Text style={{ color: '#f87171', fontSize: 16 }}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+                {focusedRowIdx === idx && row.name.length > 0 && (() => {
+                  const suggestions = pastExercises.filter(n =>
+                    n.toLowerCase().startsWith(row.name.toLowerCase()) &&
+                    n.toLowerCase() !== row.name.toLowerCase()
+                  ).slice(0, 4)
+                  if (!suggestions.length) return null
+                  return (
+                    <View style={sh.suggestions}>
+                      {suggestions.map(s => (
+                        <TouchableOpacity
+                          key={s}
+                          onPress={() => { updateRow(idx, 'name', s); setFocusedRowIdx(null) }}
+                          style={sh.suggestion}
+                        >
+                          <Text style={sh.suggestionText}>{s}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )
+                })()}
               </View>
               <View key={`${idx}-steppers`} style={sh.stepperRow}>
                 <View style={sh.stepperCol}>
@@ -923,7 +956,10 @@ const sh = StyleSheet.create({
   noteBody: { fontSize: 13, color: '#ccc', fontFamily: 'monospace', lineHeight: 19, marginTop: 10 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   recordBig: { fontSize: 28, fontWeight: 'bold', fontFamily: 'monospace' },
-  exerciseRow:   { flexDirection: 'row', gap: 4, alignItems: 'center', marginBottom: 4 },
+  exerciseRow:   { flexDirection: 'row', gap: 4, alignItems: 'center', marginBottom: 0 },
+  suggestions:   { backgroundColor: '#1a1a1a', borderWidth: 1, borderTopWidth: 0, borderColor: '#2a2a2a', borderRadius: 4, marginBottom: 4 },
+  suggestion:    { paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#111' },
+  suggestionText:{ fontSize: 11, color: '#888', fontFamily: 'monospace' },
   stepperRow:    { flexDirection: 'row', gap: 16, paddingHorizontal: 4, paddingVertical: 8, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#111' },
   stepperCol:    { alignItems: 'center', gap: 4 },
   stepperLabel:  { fontSize: 8, letterSpacing: 2, color: '#555', fontFamily: 'monospace' },
