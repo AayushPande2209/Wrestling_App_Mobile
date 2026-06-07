@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { supabase } from '../../lib/supabase'
 import CoachOnboarding from '../../components/CoachOnboarding'
+import WeightClassPicker from '../../components/WeightClassPicker'
 
 const { height: SCREEN_H } = Dimensions.get('window')
 
@@ -23,7 +24,7 @@ function SummaryRow({ label, value }) {
 export default function Profile() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
-  const [weightClass, setWeightClass] = useState('')
+  const [weightClass, setWeightClass] = useState(null)
   const [showOnBoard, setShowOnBoard] = useState(false)
   const [coachProfile, setCoachProfile] = useState(undefined)
   const [loading, setLoading] = useState(true)
@@ -57,7 +58,7 @@ export default function Profile() {
       if (error) throw error
       setEmail(data.email ?? '')
       setName(data.name ?? '')
-      setWeightClass(data.weight_class != null ? String(data.weight_class) : '')
+      setWeightClass(data.weight_class ?? null)
       setShowOnBoard(data.show_on_board ?? false)
       setCoachProfile(data.coach_profile ?? null)
     } catch (err) {
@@ -76,7 +77,7 @@ export default function Profile() {
       if (!session) return
       const { error } = await supabase.from('wrestlers').update({
         name: name.trim() || null,
-        weight_class: weightClass ? parseInt(weightClass) : null,
+        weight_class: weightClass ?? null,
         show_on_board: showOnBoard,
       }).eq('id', session.user.id)
       if (error) throw error
@@ -137,14 +138,10 @@ export default function Profile() {
           <Text style={s.fieldLabel}>NAME</Text>
           <TextInput value={name} onChangeText={setName} style={s.input} placeholder="Your name" placeholderTextColor="#2a2a2a" />
 
-          <Text style={s.fieldLabel}>WEIGHT CLASS (LBS)</Text>
-          <TextInput
+          <Text style={s.fieldLabel}>WEIGHT CLASS</Text>
+          <WeightClassPicker
             value={weightClass}
-            onChangeText={setWeightClass}
-            style={s.input}
-            keyboardType="numeric"
-            placeholder="152"
-            placeholderTextColor="#2a2a2a"
+            onChange={setWeightClass}
           />
           <Text style={s.hint}>Required for cut analysis on the dashboard.</Text>
 

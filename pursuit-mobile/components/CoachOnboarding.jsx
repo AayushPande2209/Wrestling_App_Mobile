@@ -9,6 +9,9 @@ import Animated, {
 } from 'react-native-reanimated'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
+import WeightClassPicker from './WeightClassPicker'
+
+const WEIGHT_CLASSES = [106, 113, 120, 126, 132, 138, 144, 150, 157, 165, 175, 190, 215, 285]
 
 const { width: SW } = Dimensions.get('window')
 
@@ -25,10 +28,8 @@ const C = {
 const QUESTIONS = [
   {
     key: 'weight_class',
-    type: 'number',
+    type: 'weightclass',
     question: 'What weight class are you cutting to this season?',
-    placeholder: '152',
-    unit: 'LBS',
   },
   {
     key: 'cut_start',
@@ -88,13 +89,21 @@ export default function CoachOnboarding({ onComplete, initialAnswers = null, edi
   const [selectedValues, setSelectedValues] = useState([])
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
+  const [weightClassIdx, setWeightClassIdx] = useState(() => {
+    const val = initialAnswers?.weight_class
+    const idx = val != null ? WEIGHT_CLASSES.indexOf(Number(val)) : -1
+    return idx >= 0 ? idx : WEIGHT_CLASSES.indexOf(150)
+  })
 
   // Pre-fill inputs for the current question when in edit mode
   useEffect(() => {
     if (!editMode || !initialAnswers) return
     const q = QUESTIONS[step]
     const val = answers[q.key]
-    if (q.type === 'number' || q.type === 'textarea') {
+    if (q.type === 'weightclass') {
+      const idx = val != null ? WEIGHT_CLASSES.indexOf(Number(val)) : -1
+      setWeightClassIdx(idx >= 0 ? idx : WEIGHT_CLASSES.indexOf(150))
+    } else if (q.type === 'number' || q.type === 'textarea') {
       setTextValue(val != null ? String(val) : '')
     } else if (q.type === 'select') {
       setSelectedValue(val ?? null)
@@ -112,6 +121,7 @@ export default function CoachOnboarding({ onComplete, initialAnswers = null, edi
 
   const isAnswerValid = () => {
     if (q.optional) return true
+    if (q.type === 'weightclass') return true
     if (q.type === 'number' || q.type === 'textarea') return textValue.trim().length > 0
     if (q.type === 'select') return selectedValue !== null
     if (q.type === 'multiselect') return selectedValues.length > 0
@@ -119,6 +129,7 @@ export default function CoachOnboarding({ onComplete, initialAnswers = null, edi
   }
 
   const getAnswer = () => {
+    if (q.type === 'weightclass') return WEIGHT_CLASSES[weightClassIdx]
     if (q.type === 'number' || q.type === 'textarea') return textValue.trim()
     if (q.type === 'select') return selectedValue ?? ''
     if (q.type === 'multiselect') return [...selectedValues]
@@ -225,6 +236,13 @@ export default function CoachOnboarding({ onComplete, initialAnswers = null, edi
 
           {/* Input — varies by question type */}
           <View style={s.inputArea}>
+            {q.type === 'weightclass' && (
+              <WeightClassPicker
+                value={WEIGHT_CLASSES[weightClassIdx]}
+                onChange={(cls) => setWeightClassIdx(WEIGHT_CLASSES.indexOf(cls))}
+              />
+            )}
+
             {q.type === 'number' && (
               <View style={s.numberRow}>
                 <TextInput
