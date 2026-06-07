@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import Svg, { Polyline, Circle, Line, Text as SvgText, Rect, G } from 'react-native-svg'
 import { supabase } from '../../lib/supabase'
+import WheelPicker from '../../components/WheelPicker'
 
 const SCREEN_WIDTH = Dimensions.get('window').width
 const API_URL = process.env.EXPO_PUBLIC_API_URL
@@ -104,6 +105,7 @@ export default function WeightLog() {
   const router = useRouter()
   const [uid, setUid] = useState(null)
   const [weight, setWeight] = useState('')
+  const [currentWeight, setCurrentWeight] = useState(null)
   const [timeOfDay, setTimeOfDay] = useState('morning')
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -120,8 +122,16 @@ export default function WeightLog() {
   const [trendLoading, setTrendLoading] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setUid(session.user.id)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return
+      setUid(session.user.id)
+      const { data } = await supabase.from('wrestlers')
+        .select('current_weight')
+        .eq('id', session.user.id)
+        .single()
+      const w = data?.current_weight != null ? String(data.current_weight) : '150.0'
+      setCurrentWeight(w)
+      setWeight(w)
     })
   }, [])
 
@@ -156,7 +166,7 @@ export default function WeightLog() {
       })
       if (error) throw error
       await supabase.from('wrestlers').update({ current_weight: parsedWeight }).eq('id', uid)
-      setWeight(''); setTimeOfDay('morning'); setNote('')
+      setTimeOfDay('morning'); setNote('')
       setSubmitSuccess(true)
       queryClient.invalidateQueries({ queryKey: ['weight-logs', uid] })
     } catch (err) {
@@ -238,17 +248,10 @@ export default function WeightLog() {
       {/* Log form */}
       <View style={s.card}>
         <Text style={s.sectionLabel}>ENTER WEIGHT</Text>
-        <View style={s.weightInputRow}>
-          <TextInput
-            value={weight}
-            onChangeText={setWeight}
-            keyboardType="decimal-pad"
-            style={s.bigWeightInput}
-            placeholder="000.0"
-            placeholderTextColor="#333"
-          />
-          <Text style={s.weightUnit}>LBS</Text>
-        </View>
+        {currentWeight !== null
+          ? <WheelPicker value={currentWeight} onChange={setWeight} />
+          : <Text style={s.loadingWheel}>LOADING...</Text>
+        }
 
         <Text style={s.sectionLabel}>TIME OF DAY</Text>
         <View style={s.todGrid}>
@@ -297,7 +300,7 @@ export default function WeightLog() {
 
         <TouchableOpacity
           onPress={handleLog}
-          disabled={submitting || !weight || !timeOfDay}
+          disabled={submitting || !timeOfDay || currentWeight === null}
           activeOpacity={0.7}
           style={[s.logBtn, (submitting || !weight || !timeOfDay) && s.logBtnDisabled]}
         >
@@ -417,10 +420,8 @@ const s = StyleSheet.create({
   cardTitle:        { fontSize: 9, letterSpacing: 4, color: C.orange, fontFamily: 'monospace', marginBottom: 4 },
   sectionLabel:     { fontSize: 9, letterSpacing: 3, color: C.textMuted, fontFamily: 'monospace', textTransform: 'uppercase' },
 
-  // Weight input
-  weightInputRow:   { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
-  bigWeightInput:   { flex: 1, fontSize: 32, fontWeight: 'bold', color: C.orange, fontFamily: 'monospace', borderBottomWidth: 1.5, borderBottomColor: C.orange, paddingVertical: 4, paddingHorizontal: 0, textAlign: 'center' },
-  weightUnit:       { fontSize: 11, color: C.textMuted, fontFamily: 'monospace', marginBottom: 6 },
+  // Wheel picker loading placeholder
+  loadingWheel:     { fontSize: 11, color: C.textDim, fontFamily: 'monospace', letterSpacing: 4, textAlign: 'center', paddingVertical: 16 },
 
   // Time of day
   todGrid:          { gap: 8 },
