@@ -665,11 +665,11 @@ function WorkoutsTab() {
 
 // ─── Goals tab ────────────────────────────────────────────────────────────────
 const GOAL_TYPES = [
-  { value: 'lifting', label: 'Lifting' },
-  { value: 'practice', label: 'Practice' },
-  { value: 'habit', label: 'Habit' },
-  { value: 'tournament_placement', label: 'Tournament' },
-  { value: 'other', label: 'Other' },
+  { value: 'lifting',              label: 'LIFTING',    icon: 'barbell-outline',              sub: 'Auto tracked' },
+  { value: 'practice',             label: 'PRACTICE',   icon: 'calendar-outline',             sub: 'Auto tracked' },
+  { value: 'habit',                label: 'HABIT',      icon: 'repeat-outline',               sub: 'Auto tracked' },
+  { value: 'tournament_placement', label: 'TOURNAMENT', icon: 'trophy-outline',               sub: 'Manual' },
+  { value: 'other',                label: 'OTHER',      icon: 'ellipsis-horizontal-outline',  sub: 'Manual' },
 ]
 const AUTO_TYPES = new Set(['lifting', 'practice', 'habit'])
 
@@ -811,12 +811,24 @@ function GoalsTab() {
       <Card>
         <CardTitle text="ADD GOAL" />
         <FieldLabel text="TYPE" />
-        <View style={[sh.segmented, { flexWrap: 'wrap' }]}>
-          {GOAL_TYPES.map(t => (
-            <TouchableOpacity key={t.value} onPress={() => setGoalType(t.value)} style={[sh.seg, goalType === t.value && sh.segActive]}>
-              <Text style={[sh.segText, goalType === t.value && sh.segTextActive]}>{t.label.toUpperCase()}</Text>
-            </TouchableOpacity>
-          ))}
+        <View style={sh.goalTypeGrid}>
+          {GOAL_TYPES.map((t, i) => {
+            const active = goalType === t.value
+            const isLast = i === GOAL_TYPES.length - 1
+            const isOdd = GOAL_TYPES.length % 2 !== 0
+            return (
+              <TouchableOpacity
+                key={t.value}
+                onPress={() => setGoalType(t.value)}
+                activeOpacity={0.7}
+                style={[sh.goalTypeCard, active && sh.goalTypeCardActive, isLast && isOdd && sh.goalTypeCardFull]}
+              >
+                <Ionicons name={t.icon} size={24} color={active ? '#e8712a' : '#555'} />
+                <Text style={[sh.goalTypeLabel, active && sh.goalTypeLabelActive]}>{t.label}</Text>
+                <Text style={sh.goalTypeSub}>{t.sub}</Text>
+              </TouchableOpacity>
+            )
+          })}
         </View>
         <FieldLabel text="DESCRIPTION" />
         <TextInput value={description} onChangeText={setDescription} style={input.base} placeholder="Describe your goal" placeholderTextColor="#2a2a2a" />
@@ -965,6 +977,13 @@ const sh = StyleSheet.create({
   stepperLabel:  { fontSize: 8, letterSpacing: 2, color: '#555', fontFamily: 'monospace' },
   addRow: { borderWidth: 1, borderColor: '#1a1a1a', padding: 10, alignItems: 'center', marginTop: 4 },
   addRowText: { fontSize: 10, letterSpacing: 3, color: '#888', fontFamily: 'monospace' },
+  goalTypeGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  goalTypeCard:       { width: '47%', backgroundColor: '#141414', borderWidth: 1, borderColor: '#222', borderRadius: 8, padding: 14, alignItems: 'center', gap: 6 },
+  goalTypeCardActive: { backgroundColor: '#1e1208', borderColor: '#2a1a08' },
+  goalTypeCardFull:   { width: '100%' },
+  goalTypeLabel:      { fontSize: 10, fontWeight: 'bold', letterSpacing: 2, color: '#555', fontFamily: 'monospace' },
+  goalTypeLabelActive:{ color: '#e8712a' },
+  goalTypeSub:        { fontSize: 8, color: '#333', fontFamily: 'monospace' },
   goalCard: { borderWidth: 1, borderColor: '#1a1a1a', backgroundColor: '#0a0a0a', padding: 16 },
   goalType: { fontSize: 9, letterSpacing: 4, color: '#888', fontFamily: 'monospace', marginBottom: 4 },
   goalDesc: { fontSize: 13, color: '#f0f0f0', fontFamily: 'monospace', lineHeight: 18 },
