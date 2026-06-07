@@ -613,8 +613,7 @@ function WorkoutsTab() {
                     </View>
                   )
                 })()}
-              </View>
-              <View key={`${idx}-steppers`} style={sh.stepperRow}>
+              <View style={sh.stepperRow}>
                 <View style={sh.stepperCol}>
                   <Text style={sh.stepperLabel}>SETS</Text>
                   <Stepper value={row.sets} onChange={v => updateRow(idx, 'sets', v)} min={1} max={20} step={1} />
@@ -628,6 +627,7 @@ function WorkoutsTab() {
                   <Stepper value={row.weight} onChange={v => updateRow(idx, 'weight', v)} min={0} max={1000} step={5} suffix=" lbs" />
                 </View>
               </View>
+            </View>
             ))}
             <TouchableOpacity onPress={() => setRows(prev => [...prev, { ...EMPTY_ROW }])} style={sh.addRow}>
               <Text style={sh.addRowText}>+ ADD ROW</Text>
