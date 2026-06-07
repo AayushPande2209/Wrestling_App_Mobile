@@ -24,6 +24,11 @@ const C = {
   textDim: '#555555',
 }
 
+const NOTE_CHIPS = [
+  'Felt heavy', 'Felt light', 'After practice',
+  'Morning after cut', 'Dehydrated', 'Feeling good',
+]
+
 const TIME_OF_DAY = [
   { value: 'morning',         icon: 'sunny-outline',   label: 'MORNING' },
   { value: 'before_practice', icon: 'barbell-outline', label: 'BEFORE' },
@@ -108,6 +113,7 @@ export default function WeightLog() {
   const [currentWeight, setCurrentWeight] = useState(null)
   const [timeOfDay, setTimeOfDay] = useState('morning')
   const [note, setNote] = useState('')
+  const [noteFocused, setNoteFocused] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
@@ -274,9 +280,30 @@ export default function WeightLog() {
         </View>
 
         <Text style={s.sectionLabel}>NOTE</Text>
+        {noteFocused && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={s.chipsRow}
+            keyboardShouldPersistTaps="always"
+          >
+            {NOTE_CHIPS.map(chip => (
+              <TouchableOpacity
+                key={chip}
+                onPress={() => setNote(chip)}
+                activeOpacity={0.7}
+                style={s.chip}
+              >
+                <Text style={s.chipText}>{chip}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
         <TextInput
           value={note}
           onChangeText={setNote}
+          onFocus={() => setNoteFocused(true)}
+          onBlur={() => setNoteFocused(false)}
           style={s.noteInput}
           placeholder="felt heavy, post-practice..."
           placeholderTextColor="#333"
@@ -420,6 +447,10 @@ const s = StyleSheet.create({
   todBtnTextActive:  { color: C.orange },
   todBtnTextInactive:{ color: '#444' },
 
+  // Note chips
+  chipsRow:         { marginBottom: 6 },
+  chip:             { backgroundColor: '#141414', borderWidth: 0.5, borderColor: '#2a2a2a', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, marginRight: 6 },
+  chipText:         { fontSize: 10, color: '#888', fontFamily: 'monospace' },
   // Note
   noteInput:        { backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 4, color: C.text, fontFamily: 'monospace', fontSize: 13, paddingHorizontal: 12, paddingVertical: 10, minHeight: 44 },
 
