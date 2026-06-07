@@ -1,33 +1,65 @@
 import { useState, useEffect } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Switch,
+  StyleSheet, Switch, Dimensions,
 } from 'react-native'
+import Animated, {
+  useSharedValue, useAnimatedStyle, withTiming, runOnJS,
+} from 'react-native-reanimated'
 import { supabase } from '../../lib/supabase'
+import CoachOnboarding from '../../components/CoachOnboarding'
+
+const { height: SCREEN_H } = Dimensions.get('window')
+
+function SummaryRow({ label, value }) {
+  return (
+    <View style={s.summaryRow}>
+      <Text style={s.summaryLabel}>{label}</Text>
+      <Text style={s.summaryValue}>{value}</Text>
+    </View>
+  )
+}
 
 export default function Profile() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [weightClass, setWeightClass] = useState('')
   const [showOnBoard, setShowOnBoard] = useState(false)
+  const [coachProfile, setCoachProfile] = useState(undefined)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [editingCoachProfile, setEditingCoachProfile] = useState(false)
+  const [coachProfileSaved, setCoachProfileSaved] = useState(false)
+
+  const slideY = useSharedValue(SCREEN_H)
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ translateY: slideY.value }] }))
 
   useEffect(() => { loadProfile() }, [])
+
+  useEffect(() => {
+    if (editingCoachProfile) {
+      slideY.value = SCREEN_H
+      slideY.value = withTiming(0, { duration: 300 })
+    }
+  }, [editingCoachProfile])
 
   async function loadProfile() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
-      const { data, error } = await supabase.from('wrestlers').select('email, name, weight_class, show_on_board').eq('id', session.user.id).single()
+      const { data, error } = await supabase.from('wrestlers')
+        .select('email, name, weight_class, show_on_board, coach_profile')
+        .eq('id', session.user.id)
+        .single()
       if (error) throw error
       setEmail(data.email ?? '')
       setName(data.name ?? '')
       setWeightClass(data.weight_class != null ? String(data.weight_class) : '')
       setShowOnBoard(data.show_on_board ?? false)
+      setCoachProfile(data.coach_profile ?? null)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -56,6 +88,31 @@ export default function Profile() {
     }
   }
 
+  const closeModal = () => {
+    slideY.value = withTiming(SCREEN_H, { duration: 300 }, (done) => {
+      if (done) runOnJS(setEditingCoachProfile)(false)
+    })
+  }
+
+  const handleCoachProfileUpdate = async (updatedProfile) => {
+    const now = new Date().toISOString()
+    const profile = {
+      ...updatedProfile,
+      completed_at: coachProfile?.completed_at ?? now,
+      edited_at: now,
+    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        await supabase.from('wrestlers').update({ coach_profile: profile }).eq('id', session.user.id)
+      }
+    } catch { /* state is updated regardless; DB failure is non-blocking */ }
+    setCoachProfile(profile)
+    closeModal()
+    setCoachProfileSaved(true)
+    setTimeout(() => setCoachProfileSaved(false), 3000)
+  }
+
   if (loading) {
     return <View style={s.center}><Text style={s.loading}>LOADING...</Text></View>
   }
@@ -64,61 +121,115 @@ export default function Profile() {
     return <View style={s.center}><Text style={s.errorText}>{error}</Text></View>
   }
 
+  const isEditMode = coachProfile !== null
+
   return (
-    <ScrollView style={s.root} contentContainerStyle={s.content}>
-      <Text style={s.pageTitle}>PROFILE</Text>
+    <View style={s.root}>
+      <ScrollView style={s.root} contentContainerStyle={s.content}>
+        <Text style={s.pageTitle}>PROFILE</Text>
 
-      <View style={s.card}>
-        <Text style={s.cardTitle}>WRESTLER INFO</Text>
+        <View style={s.card}>
+          <Text style={s.cardTitle}>WRESTLER INFO</Text>
 
-        <Text style={s.fieldLabel}>EMAIL</Text>
-        <TextInput value={email} editable={false} style={[s.input, s.inputDisabled]} />
+          <Text style={s.fieldLabel}>EMAIL</Text>
+          <TextInput value={email} editable={false} style={[s.input, s.inputDisabled]} />
 
-        <Text style={s.fieldLabel}>NAME</Text>
-        <TextInput value={name} onChangeText={setName} style={s.input} placeholder="Your name" placeholderTextColor="#2a2a2a" />
+          <Text style={s.fieldLabel}>NAME</Text>
+          <TextInput value={name} onChangeText={setName} style={s.input} placeholder="Your name" placeholderTextColor="#2a2a2a" />
 
-        <Text style={s.fieldLabel}>WEIGHT CLASS (LBS)</Text>
-        <TextInput
-          value={weightClass}
-          onChangeText={setWeightClass}
-          style={s.input}
-          keyboardType="numeric"
-          placeholder="152"
-          placeholderTextColor="#2a2a2a"
-        />
-        <Text style={s.hint}>Required for cut analysis on the dashboard.</Text>
-
-        <View style={s.toggleRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={s.toggleLabel}>SHOW ON TEAM BOARD</Text>
-            <Text style={s.toggleHint}>Share your weight and record with teammates.</Text>
-          </View>
-          <Switch
-            value={showOnBoard}
-            onValueChange={setShowOnBoard}
-            trackColor={{ false: '#1e1e1e', true: '#d97706' }}
-            thumbColor="#f0f0f0"
+          <Text style={s.fieldLabel}>WEIGHT CLASS (LBS)</Text>
+          <TextInput
+            value={weightClass}
+            onChangeText={setWeightClass}
+            style={s.input}
+            keyboardType="numeric"
+            placeholder="152"
+            placeholderTextColor="#2a2a2a"
           />
+          <Text style={s.hint}>Required for cut analysis on the dashboard.</Text>
+
+          <View style={s.toggleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.toggleLabel}>SHOW ON TEAM BOARD</Text>
+              <Text style={s.toggleHint}>Share your weight and record with teammates.</Text>
+            </View>
+            <Switch
+              value={showOnBoard}
+              onValueChange={setShowOnBoard}
+              trackColor={{ false: '#1e1e1e', true: '#d97706' }}
+              thumbColor="#f0f0f0"
+            />
+          </View>
+
+          {submitError && (
+            <View style={s.errorBox}>
+              <Text style={s.errorBoxText}>{submitError}</Text>
+            </View>
+          )}
+          {submitSuccess && (
+            <Text style={s.successText}>Profile saved.</Text>
+          )}
+
+          <TouchableOpacity
+            onPress={handleSubmit}
+            disabled={submitting}
+            style={[s.btn, submitting && s.btnDisabled]}
+          >
+            <Text style={s.btnText}>{submitting ? 'SAVING...' : 'SAVE'}</Text>
+          </TouchableOpacity>
         </View>
 
-        {submitError && (
-          <View style={s.errorBox}>
-            <Text style={s.errorBoxText}>{submitError}</Text>
+        {/* Coach Profile section */}
+        <View style={s.sectionHeader}>
+          <Text style={s.sectionLabel}>COACH PROFILE</Text>
+          {isEditMode && (
+            <TouchableOpacity onPress={() => setEditingCoachProfile(true)} activeOpacity={0.7}>
+              <Text style={s.editLink}>EDIT →</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {coachProfile !== null ? (
+          <View style={s.summaryCard}>
+            <SummaryRow label="WEIGHT CLASS" value={`${coachProfile.weight_class} lbs`} />
+            <SummaryRow label="START CUT" value={coachProfile.cut_start} />
+            <SummaryRow label="SAME-DAY CUT" value={`${coachProfile.same_day_cut} lbs`} />
+            {Array.isArray(coachProfile.cut_method) && (
+              <SummaryRow label="CUT METHODS" value={coachProfile.cut_method.join(', ')} />
+            )}
+            <SummaryRow label="SCHOOL LUNCH" value={coachProfile.school_lunch} />
+            <SummaryRow label="RECOVERY TIME" value={coachProfile.recovery_time} />
+            {coachProfile.notes ? (
+              <SummaryRow label="NOTES" value={coachProfile.notes} />
+            ) : null}
+          </View>
+        ) : (
+          <View style={s.summaryCard}>
+            <Text style={s.emptyText}>Coach profile not set up yet.</Text>
+            <TouchableOpacity onPress={() => setEditingCoachProfile(true)} activeOpacity={0.7}>
+              <Text style={s.editLink}>SET UP NOW →</Text>
+            </TouchableOpacity>
           </View>
         )}
-        {submitSuccess && (
-          <Text style={s.successText}>Profile saved.</Text>
-        )}
 
-        <TouchableOpacity
-          onPress={handleSubmit}
-          disabled={submitting}
-          style={[s.btn, submitting && s.btnDisabled]}
-        >
-          <Text style={s.btnText}>{submitting ? 'SAVING...' : 'SAVE'}</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+        {coachProfileSaved && (
+          <Text style={[s.successText, { paddingHorizontal: 0 }]}>Coach profile updated.</Text>
+        )}
+      </ScrollView>
+
+      {editingCoachProfile && (
+        <Animated.View style={[s.modalOverlay, animStyle]}>
+          <CoachOnboarding
+            initialAnswers={isEditMode ? coachProfile : null}
+            editMode={isEditMode}
+            onComplete={handleCoachProfileUpdate}
+            onCancel={closeModal}
+            applyTopInset={false}
+            skipDbWrite={true}
+          />
+        </Animated.View>
+      )}
+    </View>
   )
 }
 
@@ -144,4 +255,14 @@ const s = StyleSheet.create({
   btn: { backgroundColor: '#d97706', paddingVertical: 12, alignItems: 'center', minHeight: 44, justifyContent: 'center', marginTop: 8 },
   btnDisabled: { opacity: 0.4 },
   btnText: { fontSize: 10, letterSpacing: 6, color: '#0a0a0a', fontWeight: 'bold', fontFamily: 'monospace' },
+  // Coach Profile section
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sectionLabel: { fontSize: 9, color: '#555', letterSpacing: 4, fontFamily: 'monospace' },
+  editLink: { fontSize: 9, color: '#e8712a', letterSpacing: 2, fontFamily: 'monospace' },
+  summaryCard: { backgroundColor: '#0a0a0a', borderWidth: 1, borderColor: '#1a1a1a', padding: 12, gap: 2 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderBottomWidth: 0.5, borderBottomColor: '#1a1a1a' },
+  summaryLabel: { fontSize: 9, color: '#555', letterSpacing: 2, fontFamily: 'monospace' },
+  summaryValue: { fontSize: 10, color: '#ccc', fontFamily: 'monospace', flex: 1, textAlign: 'right', paddingLeft: 8 },
+  emptyText: { fontSize: 11, color: '#555', fontFamily: 'monospace', marginBottom: 8 },
+  modalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#0a0a0a', zIndex: 100 },
 })

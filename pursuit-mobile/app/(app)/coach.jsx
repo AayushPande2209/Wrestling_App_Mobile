@@ -1,20 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  KeyboardAvoidingView, Platform, StyleSheet,
+  KeyboardAvoidingView, Platform, StyleSheet, ActivityIndicator,
 } from 'react-native'
 import { supabase } from '../../lib/supabase'
+import CoachOnboarding from '../../components/CoachOnboarding'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
 
-const ONBOARDING_QUESTIONS = [
-  { key: 'weight_class', question: 'What weight class are you cutting to this season?', placeholder: 'e.g. 152' },
-  { key: 'cut_start', question: 'When do you typically start your cut?', placeholder: 'e.g. 3 days out, 1 week out' },
-  { key: 'same_day_cut', question: 'How much do you usually cut the day of weigh-ins?', placeholder: 'e.g. 2–3 lbs' },
-  { key: 'cut_method', question: 'How do you cut?', placeholder: 'e.g. diet only, sweat/sauna, water restriction, combination' },
-  { key: 'school_lunch', question: "What's usually available at your school lunch?", placeholder: 'e.g. pizza, sandwiches, salad bar…' },
-  { key: 'notes', question: 'Anything else I should know about how your body cuts weight?', placeholder: 'Optional — skip if nothing comes to mind', optional: true },
-]
 
 function StatusChip({ label, value, highlight, green }) {
   return (
@@ -48,12 +41,6 @@ export default function Coach() {
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState(null)
   const [initialLoading, setInitialLoading] = useState(true)
-
-  const [step, setStep] = useState(0)
-  const [answers, setAnswers] = useState({})
-  const [onboardingInput, setOnboardingInput] = useState('')
-  const [onboardingLoading, setOnboardingLoading] = useState(false)
-  const [onboardingError, setOnboardingError] = useState(null)
 
   const scrollRef = useRef(null)
 
@@ -96,26 +83,27 @@ export default function Coach() {
     return res.json()
   }
 
-  async function handleOnboardingNext(skipVal) {
-    const q = ONBOARDING_QUESTIONS[step]
-    const value = skipVal !== undefined ? skipVal : onboardingInput.trim()
-    if (!value && !q.optional) return
-    const updated = { ...answers, [q.key]: value }
-    setAnswers(updated)
-    setOnboardingInput('')
-    const isLast = step === ONBOARDING_QUESTIONS.length - 1
-    if (!isLast) { setStep(s => s + 1); return }
-    setOnboardingLoading(true)
-    setOnboardingError(null)
-    try {
-      const data = await postCoach({ message: 'Onboarding complete', onboarding: updated })
-      setCoachProfile(updated)
-      setMessages([{ role: 'assistant', content: data.response }])
-    } catch (err) {
-      setOnboardingError(err.message)
-    } finally {
-      setOnboardingLoading(false)
+  const handleOnboardingComplete = async (profile) => {
+    const cutStartPhrases = {
+      'Day of weigh-ins': 'cutting the day of weigh-ins',
+      '2–3 days out': 'starting 2–3 days out',
+      '4–5 days out': 'starting 4–5 days out',
+      '1 week or more': 'starting a week or more out',
     }
+    const cutStartPhrase = cutStartPhrases[profile.cut_start] ?? String(profile.cut_start).toLowerCase()
+    const welcomeContent = `Got it — I've got everything I need. You're cutting to ${profile.weight_class} lbs, you're typically ${cutStartPhrase}, and your same-day cut is around ${profile.same_day_cut} lbs. I'll build your plan around that. What do you want to work on first?`
+    setMessages([{ role: 'assistant', content: welcomeContent }])
+    setCoachProfile(profile)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        await supabase.from('coach_messages').insert({
+          wrestler_id: session.user.id,
+          role: 'assistant',
+          content: welcomeContent,
+        })
+      }
+    } catch { /* welcome message is in state; DB failure is non-blocking */ }
   }
 
   async function handleSend() {
@@ -147,55 +135,15 @@ export default function Coach() {
   }
 
   if (initialLoading) {
-    return <View style={s.center}><Text style={s.loading}>LOADING...</Text></View>
+    return (
+      <View style={s.center}>
+        <ActivityIndicator color="#e8712a" size="large" />
+      </View>
+    )
   }
 
-  // Onboarding
   if (coachProfile === null) {
-    const q = ONBOARDING_QUESTIONS[step]
-    const isLast = step === ONBOARDING_QUESTIONS.length - 1
-    return (
-      <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={s.onboardContent}>
-          <Text style={s.onboardSubtitle}>WEIGHT CUT COACH</Text>
-          <Text style={s.onboardTitle}>Let's set up your profile</Text>
-          <Text style={s.onboardStep}>{step + 1} of {ONBOARDING_QUESTIONS.length}</Text>
-
-          {/* Progress bar */}
-          <View style={s.progressTrack}>
-            {ONBOARDING_QUESTIONS.map((_, i) => (
-              <View key={i} style={[s.progressDot, i <= step && s.progressDotActive]} />
-            ))}
-          </View>
-
-          <Text style={s.onboardQuestion}>{q.question}</Text>
-
-          <TextInput
-            value={onboardingInput}
-            onChangeText={setOnboardingInput}
-            style={s.onboardInput}
-            placeholder={q.placeholder}
-            placeholderTextColor="#333"
-            autoFocus
-          />
-          {onboardingError && <Text style={s.errorText}>{onboardingError}</Text>}
-          <TouchableOpacity
-            onPress={handleOnboardingNext}
-            disabled={onboardingLoading || (!onboardingInput.trim() && !q.optional)}
-            style={[s.onboardBtn, (onboardingLoading || (!onboardingInput.trim() && !q.optional)) && s.btnDisabled]}
-          >
-            <Text style={s.onboardBtnText}>
-              {onboardingLoading ? 'SETTING UP...' : isLast ? 'FINISH SETUP' : 'NEXT →'}
-            </Text>
-          </TouchableOpacity>
-          {isLast && q.optional && !onboardingLoading && (
-            <TouchableOpacity onPress={() => handleOnboardingNext('')} style={s.skipBtn}>
-              <Text style={s.skipText}>Skip</Text>
-            </TouchableOpacity>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    )
+    return <CoachOnboarding onComplete={handleOnboardingComplete} applyTopInset={false} />
   }
 
   // Chat
@@ -293,22 +241,6 @@ export default function Coach() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0d0d0d' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0d0d0d' },
-  loading: { fontSize: 11, color: '#888', letterSpacing: 6, fontFamily: 'monospace' },
-  // Onboarding
-  onboardContent: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  onboardSubtitle: { fontSize: 10, letterSpacing: 6, color: '#e8712a', fontFamily: 'monospace', marginBottom: 6 },
-  onboardTitle: { fontSize: 22, fontWeight: 'bold', color: '#f0f0f0', fontFamily: 'monospace', letterSpacing: 2 },
-  onboardStep: { fontSize: 11, color: '#555', fontFamily: 'monospace', marginTop: 4, marginBottom: 20 },
-  progressTrack: { flexDirection: 'row', gap: 6, marginBottom: 24 },
-  progressDot: { flex: 1, height: 2, backgroundColor: '#1f1f1f' },
-  progressDotActive: { backgroundColor: '#e8712a' },
-  onboardQuestion: { fontSize: 16, fontWeight: '600', color: '#f0f0f0', fontFamily: 'monospace', lineHeight: 22, marginBottom: 16 },
-  onboardInput: { backgroundColor: '#0d0d0d', borderWidth: 1, borderColor: '#1f1f1f', color: '#f0f0f0', fontFamily: 'monospace', fontSize: 14, paddingHorizontal: 16, paddingVertical: 12, minHeight: 44 },
-  onboardBtn: { backgroundColor: '#e8712a', marginTop: 12, paddingVertical: 14, alignItems: 'center' },
-  onboardBtnText: { fontSize: 10, letterSpacing: 6, color: '#0d0d0d', fontWeight: 'bold', fontFamily: 'monospace' },
-  skipBtn: { marginTop: 12, alignItems: 'center' },
-  skipText: { fontSize: 10, color: '#555', fontFamily: 'monospace', letterSpacing: 2 },
-  errorText: { fontSize: 11, color: '#f87171', fontFamily: 'monospace', marginTop: 8 },
   btnDisabled: { opacity: 0.4 },
   // Chat
   chatHeader: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },

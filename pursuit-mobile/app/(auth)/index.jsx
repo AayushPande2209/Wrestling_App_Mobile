@@ -37,7 +37,7 @@ export default function AuthScreen() {
           if (data.user) {
             await supabase.from('wrestlers').insert({ id: data.user.id, email, name: email })
           }
-          router.replace('/(app)/coach')
+          router.replace('/(auth)/coach-onboarding')
         } else {
           if (data.user) {
             await supabase.from('wrestlers').upsert(
