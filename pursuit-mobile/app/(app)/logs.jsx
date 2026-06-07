@@ -784,32 +784,14 @@ function GoalsTab() {
 }
 
 // ─── Logs screen (tab container) ──────────────────────────────────────────────
-const TABS = ['MATCHES', 'NOTES', 'WORKOUTS', 'GOALS']
+const VALID_TABS = ['MATCHES', 'NOTES', 'WORKOUTS', 'GOALS']
 
 export default function Logs() {
-  const { tab: initialTab } = useLocalSearchParams()
-  const VALID = ['MATCHES', 'NOTES', 'WORKOUTS', 'GOALS']
-  const [activeTab, setActiveTab] = useState(VALID.includes(initialTab) ? initialTab : 'MATCHES')
-
-  useEffect(() => {
-    if (VALID.includes(initialTab)) setActiveTab(initialTab)
-  }, [initialTab])
+  const { tab } = useLocalSearchParams()
+  const activeTab = VALID_TABS.includes(tab) ? tab : 'MATCHES'
 
   return (
     <ScrollView style={sh.root} contentContainerStyle={sh.content}>
-      {/* Tab bar */}
-      <View style={sh.tabBar}>
-        {TABS.map(tab => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => setActiveTab(tab)}
-            style={[sh.tabBtn, activeTab === tab && sh.tabBtnActive]}
-          >
-            <Text style={[sh.tabBtnText, activeTab === tab && sh.tabBtnTextActive]}>{tab}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       {activeTab === 'MATCHES' && <MatchesTab />}
       {activeTab === 'NOTES' && <NotesTab />}
       {activeTab === 'WORKOUTS' && <WorkoutsTab />}
@@ -822,11 +804,6 @@ export default function Logs() {
 const sh = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0d0d0d' },
   content: { padding: 16, paddingBottom: 40 },
-  tabBar: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#1a1a1a', marginBottom: 16 },
-  tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center' },
-  tabBtnActive: { borderBottomWidth: 2, borderBottomColor: '#e8712a', marginBottom: -1 },
-  tabBtnText: { fontSize: 9, letterSpacing: 4, color: '#555', fontFamily: 'monospace', fontWeight: '500' },
-  tabBtnTextActive: { color: '#e8712a' },
   pageTitle: { fontSize: 22, fontWeight: 'bold', letterSpacing: 8, color: '#f0f0f0', fontFamily: 'monospace' },
   card: { backgroundColor: '#0a0a0a', borderWidth: 1, borderColor: '#1a1a1a', padding: 16, gap: 8 },
   cardTitle: { fontSize: 10, letterSpacing: 4, color: '#d97706', fontFamily: 'monospace', marginBottom: 4 },
