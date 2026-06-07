@@ -48,11 +48,37 @@ export default function Nutrition() {
   const [mpClass, setMpClass] = useState('')
   const [mpDays, setMpDays] = useState('')
   const [mpInputs, setMpInputs] = useState(null)
+  const [mpInputError, setMpInputError] = useState(null)
 
   const [rcBefore, setRcBefore] = useState('')
   const [rcAfter, setRcAfter] = useState('')
   const [rcHours, setRcHours] = useState('')
   const [rcInputs, setRcInputs] = useState(null)
+  const [rcInputError, setRcInputError] = useState(null)
+
+  const submitRecovery = () => {
+    const before = parseFloat(rcBefore)
+    const after = parseFloat(rcAfter)
+    const hours = parseInt(rcHours)
+    if (isNaN(before) || isNaN(after) || isNaN(hours)) {
+      setRcInputError('Enter valid numbers for all three fields.')
+      return
+    }
+    setRcInputError(null)
+    setRcInputs({ weight_before_cut: before, weight_after_cut: after, hours_until_match: hours, _ts: Date.now() })
+  }
+
+  const submitMealPlan = () => {
+    const weight = parseFloat(mpWeight)
+    const cls = parseInt(mpClass)
+    const days = parseInt(mpDays)
+    if (isNaN(weight) || isNaN(cls) || isNaN(days)) {
+      setMpInputError('Enter valid numbers for all three fields.')
+      return
+    }
+    setMpInputError(null)
+    setMpInputs({ current_weight: weight, target_weight_class: cls, days_until_weigh_in: days, _ts: Date.now() })
+  }
 
   const { data: mealPlan, isFetching: mpFetching, isError: mpError } = useQuery({
     queryKey: ['meal-plan', mpInputs],
@@ -74,8 +100,57 @@ export default function Nutrition() {
     <ScrollView style={s.root} contentContainerStyle={s.content}>
       <Text style={s.pageTitle}>NUTRITION</Text>
 
+      {/* ── Recovery Protocol ── */}
+      <Text style={s.sectionLabel}>POST WEIGH-IN RECOVERY</Text>
+      <View style={s.card}>
+        <Text style={s.fieldLabel}>WEIGHT BEFORE CUT (LBS)</Text>
+        <TextInput value={rcBefore} onChangeText={setRcBefore} style={s.input} keyboardType="decimal-pad" placeholder="158.5" placeholderTextColor="#2a2a2a" />
+        <Text style={s.fieldLabel}>WEIGHT AFTER WEIGH-IN (LBS)</Text>
+        <TextInput value={rcAfter} onChangeText={setRcAfter} style={s.input} keyboardType="decimal-pad" placeholder="152.0" placeholderTextColor="#2a2a2a" />
+        <Text style={s.fieldLabel}>HOURS UNTIL FIRST MATCH</Text>
+        <TextInput value={rcHours} onChangeText={setRcHours} style={s.input} keyboardType="numeric" placeholder="4" placeholderTextColor="#2a2a2a" />
+        {rcInputError && <Text style={s.inputError}>{rcInputError}</Text>}
+        <TouchableOpacity
+          onPress={submitRecovery}
+          disabled={rcFetching}
+          style={[s.btn, rcFetching && s.btnDisabled]}
+        >
+          <Text style={s.btnText}>{rcFetching ? 'LOADING...' : 'GET RECOVERY PLAN'}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {rcInputs && !rcFetching && rcError && (
+        <Text style={s.mutedText}>Recovery plan unavailable right now.</Text>
+      )}
+
+      {recovery && (
+        <>
+          <View style={[s.card, { flexDirection: 'row', alignItems: 'center', gap: 16 }]}>
+            <View>
+              <Text style={s.microLabel}>FLUIDS TARGET</Text>
+              <Text style={s.fluidValue}>{recovery.fluids_oz}<Text style={s.unit}> oz</Text></Text>
+            </View>
+            <Text style={s.fluidNote}>Rehydrate before eating. Spread intake — do not drink all at once.</Text>
+          </View>
+          <View style={s.card}>
+            <Text style={s.cardTitle}>TIMELINE</Text>
+            {recovery.timeline.map((step, i) => {
+              const h = step.hours_before_match
+              const timeLabel = h === 0.5 ? '30 min' : `${h}h`
+              return (
+                <View key={i} style={s.timelineRow}>
+                  <Text style={s.timelineTime}>T − {timeLabel}</Text>
+                  <Text style={s.timelineAction}>{step.action}</Text>
+                </View>
+              )
+            })}
+          </View>
+          {recovery.meals.map((meal, i) => <MealCard key={i} meal={meal} />)}
+        </>
+      )}
+
       {/* ── Cut Meal Planner ── */}
-      <Text style={s.sectionLabel}>CUT MEAL PLANNER</Text>
+      <Text style={[s.sectionLabel, { marginTop: 16 }]}>CUT MEAL PLANNER</Text>
       <View style={s.card}>
         <Text style={s.fieldLabel}>CURRENT WEIGHT (LBS)</Text>
         <TextInput value={mpWeight} onChangeText={setMpWeight} style={s.input} keyboardType="decimal-pad" placeholder="158.5" placeholderTextColor="#2a2a2a" />
@@ -83,8 +158,9 @@ export default function Nutrition() {
         <TextInput value={mpClass} onChangeText={setMpClass} style={s.input} keyboardType="numeric" placeholder="152" placeholderTextColor="#2a2a2a" />
         <Text style={s.fieldLabel}>DAYS UNTIL WEIGH-IN</Text>
         <TextInput value={mpDays} onChangeText={setMpDays} style={s.input} keyboardType="numeric" placeholder="7" placeholderTextColor="#2a2a2a" />
+        {mpInputError && <Text style={s.inputError}>{mpInputError}</Text>}
         <TouchableOpacity
-          onPress={() => setMpInputs({ current_weight: parseFloat(mpWeight), target_weight_class: parseInt(mpClass), days_until_weigh_in: parseInt(mpDays), _ts: Date.now() })}
+          onPress={submitMealPlan}
           disabled={mpFetching}
           style={[s.btn, mpFetching && s.btnDisabled]}
         >
@@ -123,54 +199,6 @@ export default function Nutrition() {
           {mealPlan.meals.map((meal, i) => <MealCard key={i} meal={meal} />)}
         </>
       )}
-
-      {/* ── Recovery Protocol ── */}
-      <Text style={[s.sectionLabel, { marginTop: 16 }]}>POST WEIGH-IN RECOVERY</Text>
-      <View style={s.card}>
-        <Text style={s.fieldLabel}>WEIGHT BEFORE CUT (LBS)</Text>
-        <TextInput value={rcBefore} onChangeText={setRcBefore} style={s.input} keyboardType="decimal-pad" placeholder="158.5" placeholderTextColor="#2a2a2a" />
-        <Text style={s.fieldLabel}>WEIGHT AFTER WEIGH-IN (LBS)</Text>
-        <TextInput value={rcAfter} onChangeText={setRcAfter} style={s.input} keyboardType="decimal-pad" placeholder="152.0" placeholderTextColor="#2a2a2a" />
-        <Text style={s.fieldLabel}>HOURS UNTIL FIRST MATCH</Text>
-        <TextInput value={rcHours} onChangeText={setRcHours} style={s.input} keyboardType="numeric" placeholder="4" placeholderTextColor="#2a2a2a" />
-        <TouchableOpacity
-          onPress={() => setRcInputs({ weight_before_cut: parseFloat(rcBefore), weight_after_cut: parseFloat(rcAfter), hours_until_match: parseInt(rcHours), _ts: Date.now() })}
-          disabled={rcFetching}
-          style={[s.btn, rcFetching && s.btnDisabled]}
-        >
-          <Text style={s.btnText}>{rcFetching ? 'LOADING...' : 'GET RECOVERY PLAN'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {rcInputs && !rcFetching && rcError && (
-        <Text style={s.mutedText}>Recovery plan unavailable right now.</Text>
-      )}
-
-      {recovery && (
-        <>
-          <View style={[s.card, { flexDirection: 'row', alignItems: 'center', gap: 16 }]}>
-            <View>
-              <Text style={s.microLabel}>FLUIDS TARGET</Text>
-              <Text style={s.fluidValue}>{recovery.fluids_oz}<Text style={s.unit}> oz</Text></Text>
-            </View>
-            <Text style={s.fluidNote}>Rehydrate before eating. Spread intake — do not drink all at once.</Text>
-          </View>
-          <View style={s.card}>
-            <Text style={s.cardTitle}>TIMELINE</Text>
-            {recovery.timeline.map((step, i) => {
-              const h = step.hours_before_match
-              const timeLabel = h === 0.5 ? '30 min' : `${h}h`
-              return (
-                <View key={i} style={s.timelineRow}>
-                  <Text style={s.timelineTime}>T − {timeLabel}</Text>
-                  <Text style={s.timelineAction}>{step.action}</Text>
-                </View>
-              )
-            })}
-          </View>
-          {recovery.meals.map((meal, i) => <MealCard key={i} meal={meal} />)}
-        </>
-      )}
     </ScrollView>
   )
 }
@@ -188,6 +216,7 @@ const s = StyleSheet.create({
   btnDisabled: { opacity: 0.4 },
   btnText: { fontSize: 10, letterSpacing: 6, color: '#0a0a0a', fontWeight: 'bold', fontFamily: 'monospace' },
   mutedText: { fontSize: 11, color: '#888', fontFamily: 'monospace' },
+  inputError: { fontSize: 11, color: '#f87171', fontFamily: 'monospace' },
   macrosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   macroStatBox: { minWidth: '40%' },
   microLabel: { fontSize: 9, letterSpacing: 3, color: '#888', fontFamily: 'monospace', marginBottom: 2 },

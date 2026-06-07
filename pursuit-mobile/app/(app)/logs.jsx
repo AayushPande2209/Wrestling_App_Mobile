@@ -125,7 +125,7 @@ function MatchesTab() {
   }, [pageData])
 
   async function handleSubmit() {
-    if (!opponent.trim()) return
+    if (!opponent.trim()) { setSubmitError('Opponent name is required.'); return }
     setSubmitError(null)
     setSubmitting(true)
     try {

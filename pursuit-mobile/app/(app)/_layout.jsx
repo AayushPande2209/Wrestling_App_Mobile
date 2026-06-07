@@ -202,9 +202,7 @@ function ActivitySheet({ visible, onClose }) {
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={close}>
       <View style={as.root}>
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={close}>
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.55)' }]} />
-        </Pressable>
+        <Pressable style={as.dim} onPress={close} />
         <Animated.View style={[as.sheet, sheetStyle, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={as.header}>
             <TouchableOpacity onPress={close} activeOpacity={0.7}>
@@ -245,7 +243,8 @@ function ActivitySheet({ visible, onClose }) {
 }
 
 const as = StyleSheet.create({
-  root:         { flex: 1, justifyContent: 'flex-end' },
+  root:         { flex: 1 },
+  dim:          { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
   sheet:        { height: SHEET_H, backgroundColor: C.bg, borderTopWidth: 1, borderTopColor: C.border, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border },
   title:        { fontSize: 13, fontWeight: 'bold', letterSpacing: 6, color: C.text, fontFamily: 'monospace' },
@@ -302,7 +301,7 @@ function BottomTabBar({ onActivity, onOther }) {
 
 const tb = StyleSheet.create({
   bar:         { flexDirection: 'row', backgroundColor: C.bg, borderTopWidth: 1, borderTopColor: '#1a1a1a' },
-  tab:         { flex: 1, alignItems: 'center', paddingTop: 8, paddingBottom: 4, gap: 3 },
+  tab:         { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 8, paddingBottom: 4, gap: 3, minHeight: 44 },
   label:       { fontSize: 9, letterSpacing: 1.5, color: '#3a3a3a', fontFamily: 'monospace' },
   labelActive: { color: C.orange },
 })
