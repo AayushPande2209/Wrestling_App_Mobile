@@ -6,6 +6,8 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocalSearchParams } from 'expo-router'
 import { format, startOfWeek, endOfWeek, startOfDay } from 'date-fns'
+import { Ionicons } from '@expo/vector-icons'
+import DateTimePicker from '@react-native-community/datetimepicker'
 import { supabase } from '../../lib/supabase'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
@@ -86,7 +88,8 @@ function MatchesTab() {
   const [winType, setWinType] = useState('decision')
   const [tournamentId, setTournamentId] = useState('')
   const [newTournamentName, setNewTournamentName] = useState('')
-  const [matchDate, setMatchDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [matchDate, setMatchDate] = useState(new Date())
+  const [showMatchDatePicker, setShowMatchDatePicker] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
 
@@ -159,11 +162,11 @@ function MatchesTab() {
         score: scoreStr,
         win_type: result === 'win' ? winType : null,
         tournament_id: resolvedTournamentId,
-        match_date: matchDate,
+        match_date: format(matchDate, 'yyyy-MM-dd'),
       })
       if (error) throw error
       setOpponent(''); setMyScore(''); setTheirScore(''); setTournamentId(''); setNewTournamentName('')
-      setMatchDate(format(new Date(), 'yyyy-MM-dd'))
+      setMatchDate(new Date())
       setPage(0); setAllMatches([])
       queryClient.invalidateQueries({ queryKey: ['matches', uid] })
       queryClient.invalidateQueries({ queryKey: ['matches-record', uid] })
@@ -259,7 +262,20 @@ function MatchesTab() {
           />
         </View>
         <FieldLabel text="DATE" />
-        <TextInput value={matchDate} onChangeText={setMatchDate} style={input.base} placeholder="YYYY-MM-DD" placeholderTextColor="#2a2a2a" />
+        <TouchableOpacity onPress={() => setShowMatchDatePicker(true)} activeOpacity={0.7} style={sh.dateBtn}>
+          <Text style={sh.dateBtnText}>{format(matchDate, 'MMM d, yyyy')}</Text>
+          <Ionicons name="calendar-outline" size={16} color="#e8712a" />
+        </TouchableOpacity>
+        {showMatchDatePicker && (
+          <DateTimePicker
+            value={matchDate}
+            mode="date"
+            display="spinner"
+            maximumDate={new Date()}
+            themeVariant="dark"
+            onChange={(_, date) => { setShowMatchDatePicker(false); if (date) setMatchDate(date) }}
+          />
+        )}
         {submitError && <Text style={sh.errorText}>{submitError}</Text>}
         <PrimaryBtn label={submitting ? 'SAVING...' : 'ADD MATCH'} onPress={handleSubmit} disabled={submitting} />
       </Card>
@@ -420,7 +436,8 @@ function WorkoutsTab() {
   const [page, setPage] = useState(0)
   const [allWorkouts, setAllWorkouts] = useState([])
   const [workoutType, setWorkoutType] = useState('lifting')
-  const [workoutDate, setWorkoutDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [workoutDate, setWorkoutDate] = useState(new Date())
+  const [showWorkoutDatePicker, setShowWorkoutDatePicker] = useState(false)
   const [durationMinutes, setDurationMinutes] = useState('')
   const [workoutNotes, setWorkoutNotes] = useState('')
   const [rows, setRows] = useState([{ ...EMPTY_ROW }])
@@ -465,7 +482,7 @@ function WorkoutsTab() {
         const validRows = rows.filter(r => r.name.trim())
         if (!validRows.length) { setSubmitError('Add at least one exercise.'); setSubmitting(false); return }
         const { error: rpcErr } = await supabase.rpc('insert_lifting_workout', {
-          p_workout_date: workoutDate,
+          p_workout_date: format(workoutDate, 'yyyy-MM-dd'),
           p_notes: workoutNotes || null,
           p_exercises: validRows.map(r => ({
             name: r.name.trim(),
@@ -479,13 +496,13 @@ function WorkoutsTab() {
         const { error } = await supabase.from('workouts').insert({
           wrestler_id: uid,
           workout_type: workoutType,
-          workout_date: workoutDate,
+          workout_date: format(workoutDate, 'yyyy-MM-dd'),
           duration_minutes: durationMinutes !== '' ? parseInt(durationMinutes) : null,
           notes: workoutNotes || null,
         })
         if (error) throw error
       }
-      setWorkoutDate(format(new Date(), 'yyyy-MM-dd'))
+      setWorkoutDate(new Date())
       setDurationMinutes(''); setWorkoutNotes(''); setRows([{ ...EMPTY_ROW }])
       setPage(0); setAllWorkouts([])
       queryClient.invalidateQueries({ queryKey: ['workouts', uid] })
@@ -528,7 +545,20 @@ function WorkoutsTab() {
           ))}
         </View>
         <FieldLabel text="DATE" />
-        <TextInput value={workoutDate} onChangeText={setWorkoutDate} style={input.base} placeholder="YYYY-MM-DD" placeholderTextColor="#2a2a2a" />
+        <TouchableOpacity onPress={() => setShowWorkoutDatePicker(true)} activeOpacity={0.7} style={sh.dateBtn}>
+          <Text style={sh.dateBtnText}>{format(workoutDate, 'MMM d, yyyy')}</Text>
+          <Ionicons name="calendar-outline" size={16} color="#e8712a" />
+        </TouchableOpacity>
+        {showWorkoutDatePicker && (
+          <DateTimePicker
+            value={workoutDate}
+            mode="date"
+            display="spinner"
+            maximumDate={new Date()}
+            themeVariant="dark"
+            onChange={(_, date) => { setShowWorkoutDatePicker(false); if (date) setWorkoutDate(date) }}
+          />
+        )}
         <FieldLabel text="DURATION (MIN, OPTIONAL)" />
         <TextInput value={durationMinutes} onChangeText={setDurationMinutes} style={input.base} keyboardType="numeric" placeholder="60" placeholderTextColor="#2a2a2a" />
         <FieldLabel text="NOTES (OPTIONAL)" />
@@ -870,6 +900,9 @@ const sh = StyleSheet.create({
   segActive: { borderColor: '#d97706' },
   segText: { fontSize: 9, letterSpacing: 3, color: '#888', fontFamily: 'monospace' },
   segTextActive: { color: '#d97706' },
+  // Date picker button
+  dateBtn:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#060606', borderWidth: 1, borderColor: '#1e1e1e', paddingHorizontal: 12, paddingVertical: 10, minHeight: 44 },
+  dateBtnText:       { fontSize: 13, color: '#f0f0f0', fontFamily: 'monospace' },
   // Result buttons
   resultRow:         { flexDirection: 'row', gap: 6, marginTop: 4 },
   resultBtn:         { flex: 1, height: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 6 },
