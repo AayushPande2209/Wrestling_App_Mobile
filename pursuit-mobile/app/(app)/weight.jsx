@@ -5,7 +5,7 @@ import {
 import { useRouter } from 'expo-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
-import Svg, { Polyline, Circle, Line, Text as SvgText } from 'react-native-svg'
+import Svg, { Polyline, Circle, Line, Text as SvgText, Rect, G } from 'react-native-svg'
 import { supabase } from '../../lib/supabase'
 
 const SCREEN_WIDTH = Dimensions.get('window').width
@@ -31,9 +31,10 @@ const TIME_OF_DAY = [
 ]
 
 function WeightChart({ data }) {
+  const [selectedIdx, setSelectedIdx] = useState(null)
   const W = SCREEN_WIDTH - 64
-  const H = 160
-  const PAD = { top: 10, right: 10, bottom: 24, left: 38 }
+  const H = 180
+  const PAD = { top: 44, right: 10, bottom: 24, left: 38 }
   const innerW = W - PAD.left - PAD.right
   const innerH = H - PAD.top - PAD.bottom
 
@@ -42,12 +43,15 @@ function WeightChart({ data }) {
   const maxW = Math.max(...weights) + 0.5
   const range = maxW - minW || 1
 
-  const toX = i => PAD.left + (i / (data.length - 1)) * innerW
+  const toX = i => PAD.left + (i / Math.max(data.length - 1, 1)) * innerW
   const toY = w => PAD.top + (1 - (w - minW) / range) * innerH
 
   const points = data.map((d, i) => `${toX(i)},${toY(d.weight)}`).join(' ')
   const labelEvery = Math.ceil(data.length / 5)
   const yTicks = [minW + range * 0.25, minW + range * 0.5, minW + range * 0.75]
+
+  const TIP_W = 76
+  const TIP_H = 36
 
   return (
     <View style={s.card}>
@@ -61,7 +65,11 @@ function WeightChart({ data }) {
         ))}
         <Polyline points={points} fill="none" stroke={C.orange} strokeWidth="2" />
         {data.map((d, i) => (
-          <Circle key={i} cx={toX(i)} cy={toY(d.weight)} r="3" fill={C.orange} />
+          <G key={i}>
+            <Circle cx={toX(i)} cy={toY(d.weight)} r={selectedIdx === i ? 5 : 3} fill={selectedIdx === i ? '#fff' : C.orange} />
+            <Circle cx={toX(i)} cy={toY(d.weight)} r="16" fill="transparent"
+              onPress={() => setSelectedIdx(selectedIdx === i ? null : i)} />
+          </G>
         ))}
         {data.filter((_, i) => i % labelEvery === 0).map((d, idx) => {
           const origIdx = idx * labelEvery
@@ -69,6 +77,23 @@ function WeightChart({ data }) {
             <SvgText key={origIdx} x={toX(origIdx)} y={H - 4} fontSize="9" fill="#555" textAnchor="middle" fontFamily="monospace">{d.date}</SvgText>
           )
         })}
+        {selectedIdx !== null && (() => {
+          const cx = toX(selectedIdx)
+          const cy = toY(data[selectedIdx].weight)
+          const tx = Math.min(Math.max(cx - TIP_W / 2, PAD.left), W - PAD.right - TIP_W)
+          const ty = cy - TIP_H - 10
+          return (
+            <G>
+              <Rect x={tx} y={ty} width={TIP_W} height={TIP_H} rx="4" fill="#1e1208" stroke={C.orange} strokeWidth="1" />
+              <SvgText x={tx + TIP_W / 2} y={ty + 14} fontSize="12" fill={C.orange} textAnchor="middle" fontFamily="monospace" fontWeight="bold">
+                {data[selectedIdx].weight} LBS
+              </SvgText>
+              <SvgText x={tx + TIP_W / 2} y={ty + 27} fontSize="9" fill="#888" textAnchor="middle" fontFamily="monospace">
+                {data[selectedIdx].date}
+              </SvgText>
+            </G>
+          )
+        })()}
       </Svg>
     </View>
   )
