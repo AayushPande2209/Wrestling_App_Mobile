@@ -9,6 +9,7 @@ import { format, startOfWeek, endOfWeek, startOfDay } from 'date-fns'
 import { Ionicons } from '@expo/vector-icons'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { supabase } from '../../lib/supabase'
+import Stepper from '../../components/Stepper'
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL
 
@@ -428,7 +429,7 @@ const WORKOUT_TYPES = [
   { value: 'cardio', label: 'CARDIO' },
   { value: 'other', label: 'OTHER' },
 ]
-const EMPTY_ROW = { name: '', sets: '', reps: '', weight: '' }
+const EMPTY_ROW = { name: '', sets: 3, reps: 10, weight: 45 }
 
 function WorkoutsTab() {
   const queryClient = useQueryClient()
@@ -486,9 +487,9 @@ function WorkoutsTab() {
           p_notes: workoutNotes || null,
           p_exercises: validRows.map(r => ({
             name: r.name.trim(),
-            sets: r.sets !== '' ? parseInt(r.sets) : null,
-            reps: r.reps !== '' ? parseInt(r.reps) : null,
-            weight: r.weight !== '' ? parseFloat(r.weight) : null,
+            sets: r.sets,
+            reps: r.reps,
+            weight: r.weight,
           })),
         })
         if (rpcErr) throw rpcErr
@@ -572,37 +573,27 @@ function WorkoutsTab() {
                 <TextInput
                   value={row.name}
                   onChangeText={v => updateRow(idx, 'name', v)}
-                  style={[input.base, { flex: 2 }]}
+                  style={[input.base, { flex: 1 }]}
                   placeholder="Exercise"
                   placeholderTextColor="#2a2a2a"
                 />
-                <TextInput
-                  value={row.sets}
-                  onChangeText={v => updateRow(idx, 'sets', v)}
-                  style={[input.base, { flex: 0.7 }]}
-                  keyboardType="numeric"
-                  placeholder="Sets"
-                  placeholderTextColor="#333"
-                />
-                <TextInput
-                  value={row.reps}
-                  onChangeText={v => updateRow(idx, 'reps', v)}
-                  style={[input.base, { flex: 0.7 }]}
-                  keyboardType="numeric"
-                  placeholder="Reps"
-                  placeholderTextColor="#333"
-                />
-                <TextInput
-                  value={row.weight}
-                  onChangeText={v => updateRow(idx, 'weight', v)}
-                  style={[input.base, { flex: 0.8 }]}
-                  keyboardType="decimal-pad"
-                  placeholder="Lbs"
-                  placeholderTextColor="#333"
-                />
-                <TouchableOpacity onPress={() => setRows(prev => prev.length === 1 ? prev : prev.filter((_, i) => i !== idx))} style={{ paddingHorizontal: 6 }}>
+                <TouchableOpacity onPress={() => setRows(prev => prev.length === 1 ? prev : prev.filter((_, i) => i !== idx))} style={{ paddingHorizontal: 4 }}>
                   <Text style={{ color: '#f87171', fontSize: 16 }}>✕</Text>
                 </TouchableOpacity>
+              </View>
+              <View key={`${idx}-steppers`} style={sh.stepperRow}>
+                <View style={sh.stepperCol}>
+                  <Text style={sh.stepperLabel}>SETS</Text>
+                  <Stepper value={row.sets} onChange={v => updateRow(idx, 'sets', v)} min={1} max={20} step={1} />
+                </View>
+                <View style={sh.stepperCol}>
+                  <Text style={sh.stepperLabel}>REPS</Text>
+                  <Stepper value={row.reps} onChange={v => updateRow(idx, 'reps', v)} min={1} max={50} step={1} />
+                </View>
+                <View style={sh.stepperCol}>
+                  <Text style={sh.stepperLabel}>WEIGHT</Text>
+                  <Stepper value={row.weight} onChange={v => updateRow(idx, 'weight', v)} min={0} max={1000} step={5} suffix=" lbs" />
+                </View>
               </View>
             ))}
             <TouchableOpacity onPress={() => setRows(prev => [...prev, { ...EMPTY_ROW }])} style={sh.addRow}>
@@ -932,7 +923,10 @@ const sh = StyleSheet.create({
   noteBody: { fontSize: 13, color: '#ccc', fontFamily: 'monospace', lineHeight: 19, marginTop: 10 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   recordBig: { fontSize: 28, fontWeight: 'bold', fontFamily: 'monospace' },
-  exerciseRow: { flexDirection: 'row', gap: 4, marginBottom: 6 },
+  exerciseRow:   { flexDirection: 'row', gap: 4, alignItems: 'center', marginBottom: 4 },
+  stepperRow:    { flexDirection: 'row', gap: 16, paddingHorizontal: 4, paddingVertical: 8, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#111' },
+  stepperCol:    { alignItems: 'center', gap: 4 },
+  stepperLabel:  { fontSize: 8, letterSpacing: 2, color: '#555', fontFamily: 'monospace' },
   addRow: { borderWidth: 1, borderColor: '#1a1a1a', padding: 10, alignItems: 'center', marginTop: 4 },
   addRowText: { fontSize: 10, letterSpacing: 3, color: '#888', fontFamily: 'monospace' },
   goalCard: { borderWidth: 1, borderColor: '#1a1a1a', backgroundColor: '#0a0a0a', padding: 16 },
