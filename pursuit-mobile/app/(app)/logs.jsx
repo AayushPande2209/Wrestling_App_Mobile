@@ -60,8 +60,18 @@ function useUid() {
 }
 
 // ─── Matches tab ──────────────────────────────────────────────────────────────
-const WIN_TYPES = ['decision', 'major', 'tech', 'pin', 'forfeit']
-const RESULTS = ['win', 'loss', 'draw']
+const WIN_TYPES = [
+  { value: 'decision', label: 'DEC' },
+  { value: 'major',    label: 'MAJOR' },
+  { value: 'tech',     label: 'TECH' },
+  { value: 'pin',      label: 'PIN' },
+  { value: 'forfeit',  label: 'FORFEIT' },
+]
+const RESULTS = [
+  { value: 'win',  label: 'WIN',  activeBg: '#1a2a1a', activeBorder: '#4ade80', activeText: '#4ade80' },
+  { value: 'loss', label: 'LOSS', activeBg: '#2a1a1a', activeBorder: '#e24a4a', activeText: '#e24a4a' },
+  { value: 'draw', label: 'DRAW', activeBg: '#1e1208', activeBorder: '#e8712a', activeText: '#e8712a' },
+]
 const PAGE_SIZE = 15
 
 function MatchesTab() {
@@ -71,7 +81,8 @@ function MatchesTab() {
   const [allMatches, setAllMatches] = useState([])
   const [opponent, setOpponent] = useState('')
   const [result, setResult] = useState('win')
-  const [score, setScore] = useState('')
+  const [myScore, setMyScore] = useState('')
+  const [theirScore, setTheirScore] = useState('')
   const [winType, setWinType] = useState('decision')
   const [tournamentId, setTournamentId] = useState('')
   const [newTournamentName, setNewTournamentName] = useState('')
@@ -140,17 +151,18 @@ function MatchesTab() {
         resolvedTournamentId = tData.id
         queryClient.invalidateQueries({ queryKey: ['tournaments', uid] })
       }
+      const scoreStr = myScore.trim() && theirScore.trim() ? `${myScore.trim()}-${theirScore.trim()}` : null
       const { error } = await supabase.from('matches').insert({
         wrestler_id: uid,
         opponent_name: opponent,
         result,
-        score: score || null,
+        score: scoreStr,
         win_type: result === 'win' ? winType : null,
         tournament_id: resolvedTournamentId,
         match_date: matchDate,
       })
       if (error) throw error
-      setOpponent(''); setScore(''); setTournamentId(''); setNewTournamentName('')
+      setOpponent(''); setMyScore(''); setTheirScore(''); setTournamentId(''); setNewTournamentName('')
       setMatchDate(format(new Date(), 'yyyy-MM-dd'))
       setPage(0); setAllMatches([])
       queryClient.invalidateQueries({ queryKey: ['matches', uid] })
@@ -184,27 +196,68 @@ function MatchesTab() {
         <FieldLabel text="OPPONENT" />
         <TextInput value={opponent} onChangeText={setOpponent} style={input.base} placeholder="Last, First" placeholderTextColor="#2a2a2a" />
         <FieldLabel text="RESULT" />
-        <View style={sh.segmented}>
-          {RESULTS.map(r => (
-            <TouchableOpacity key={r} onPress={() => setResult(r)} style={[sh.seg, result === r && sh.segActive]}>
-              <Text style={[sh.segText, result === r && sh.segTextActive]}>{r.toUpperCase()}</Text>
-            </TouchableOpacity>
-          ))}
+        <View style={sh.resultRow}>
+          {RESULTS.map(r => {
+            const active = result === r.value
+            return (
+              <TouchableOpacity
+                key={r.value}
+                onPress={() => setResult(r.value)}
+                activeOpacity={0.7}
+                style={[sh.resultBtn, active
+                  ? { backgroundColor: r.activeBg, borderColor: r.activeBorder }
+                  : sh.resultBtnInactive
+                ]}
+              >
+                <Text style={[sh.resultBtnText, { color: active ? r.activeText : '#555' }]}>
+                  {r.label}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
         </View>
-        <FieldLabel text="SCORE (OPTIONAL)" />
-        <TextInput value={score} onChangeText={setScore} style={input.base} placeholder="8-2" placeholderTextColor="#2a2a2a" />
         {result === 'win' && (
           <>
             <FieldLabel text="WIN TYPE" />
-            <View style={sh.segmented}>
-              {WIN_TYPES.map(t => (
-                <TouchableOpacity key={t} onPress={() => setWinType(t)} style={[sh.seg, winType === t && sh.segActive]}>
-                  <Text style={[sh.segText, winType === t && sh.segTextActive]}>{t.toUpperCase()}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={sh.winTypeRow}>
+              {WIN_TYPES.map(t => {
+                const active = winType === t.value
+                return (
+                  <TouchableOpacity
+                    key={t.value}
+                    onPress={() => setWinType(t.value)}
+                    activeOpacity={0.7}
+                    style={[sh.winTypeBtn, active && sh.winTypeBtnActive]}
+                  >
+                    <Text style={[sh.winTypeBtnText, active && sh.winTypeBtnTextActive]}>{t.label}</Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </ScrollView>
           </>
         )}
+        <FieldLabel text="SCORE (OPTIONAL)" />
+        <View style={sh.scoreRow}>
+          <TextInput
+            value={myScore}
+            onChangeText={setMyScore}
+            keyboardType="numeric"
+            maxLength={2}
+            placeholder="0"
+            placeholderTextColor="#2a2a2a"
+            style={sh.scoreInput}
+          />
+          <Text style={sh.scoreDash}>—</Text>
+          <TextInput
+            value={theirScore}
+            onChangeText={setTheirScore}
+            keyboardType="numeric"
+            maxLength={2}
+            placeholder="0"
+            placeholderTextColor="#2a2a2a"
+            style={sh.scoreInput}
+          />
+        </View>
         <FieldLabel text="DATE" />
         <TextInput value={matchDate} onChangeText={setMatchDate} style={input.base} placeholder="YYYY-MM-DD" placeholderTextColor="#2a2a2a" />
         {submitError && <Text style={sh.errorText}>{submitError}</Text>}
@@ -817,6 +870,21 @@ const sh = StyleSheet.create({
   segActive: { borderColor: '#d97706' },
   segText: { fontSize: 9, letterSpacing: 3, color: '#888', fontFamily: 'monospace' },
   segTextActive: { color: '#d97706' },
+  // Result buttons
+  resultRow:         { flexDirection: 'row', gap: 6, marginTop: 4 },
+  resultBtn:         { flex: 1, height: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 6 },
+  resultBtnInactive: { backgroundColor: '#141414', borderColor: '#222' },
+  resultBtnText:     { fontSize: 11, fontWeight: 'bold', letterSpacing: 3, fontFamily: 'monospace' },
+  // Win type scroll row
+  winTypeRow:        { flexDirection: 'row', gap: 6, paddingVertical: 2 },
+  winTypeBtn:        { paddingHorizontal: 12, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: '#141414', borderWidth: 1, borderColor: '#222', borderRadius: 4 },
+  winTypeBtnActive:  { backgroundColor: '#1e1208', borderColor: '#e8712a' },
+  winTypeBtnText:    { fontSize: 9, fontFamily: 'monospace', letterSpacing: 2, color: '#555' },
+  winTypeBtnTextActive: { color: '#e8712a' },
+  // Score inputs
+  scoreRow:          { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  scoreInput:        { width: 60, backgroundColor: '#060606', borderWidth: 1, borderColor: '#1e1e1e', color: '#f0f0f0', fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', textAlign: 'center', paddingVertical: 10, minHeight: 44 },
+  scoreDash:         { fontSize: 18, color: '#555', fontFamily: 'monospace', fontWeight: 'bold' },
   listRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#1a1a1a', backgroundColor: '#0a0a0a', paddingHorizontal: 14, paddingVertical: 12 },
   listMain: { fontSize: 13, color: '#ccc', fontFamily: 'monospace' },
   listSub: { fontSize: 10, color: '#555', fontFamily: 'monospace', marginTop: 2 },
