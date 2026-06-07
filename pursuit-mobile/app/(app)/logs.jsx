@@ -907,22 +907,45 @@ const VALID_TABS = ['MATCHES', 'NOTES', 'WORKOUTS', 'GOALS']
 
 export default function Logs() {
   const { tab } = useLocalSearchParams()
-  const activeTab = VALID_TABS.includes(tab) ? tab : 'MATCHES'
+  const [activeTab, setActiveTab] = useState(
+    VALID_TABS.includes(tab) ? tab : 'MATCHES'
+  )
 
   return (
-    <ScrollView style={sh.root} contentContainerStyle={sh.content}>
-      {activeTab === 'MATCHES' && <MatchesTab />}
-      {activeTab === 'NOTES' && <NotesTab />}
-      {activeTab === 'WORKOUTS' && <WorkoutsTab />}
-      {activeTab === 'GOALS' && <GoalsTab />}
-    </ScrollView>
+    <View style={sh.root}>
+      {/* In-screen tab switcher */}
+      <View style={sh.tabBar}>
+        {VALID_TABS.map(t => (
+          <TouchableOpacity
+            key={t}
+            onPress={() => setActiveTab(t)}
+            activeOpacity={0.7}
+            style={[sh.tabBtn, activeTab === t && sh.tabBtnActive]}
+          >
+            <Text style={[sh.tabBtnText, activeTab === t && sh.tabBtnTextActive]}>{t}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <ScrollView contentContainerStyle={sh.content}>
+        {activeTab === 'MATCHES'  && <MatchesTab />}
+        {activeTab === 'NOTES'    && <NotesTab />}
+        {activeTab === 'WORKOUTS' && <WorkoutsTab />}
+        {activeTab === 'GOALS'    && <GoalsTab />}
+      </ScrollView>
+    </View>
   )
 }
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 const sh = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0d0d0d' },
-  content: { padding: 16, paddingBottom: 40 },
+  root:            { flex: 1, backgroundColor: '#0d0d0d' },
+  content:         { padding: 16, paddingBottom: 40 },
+  tabBar:          { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#1a1a1a', backgroundColor: '#0d0d0d' },
+  tabBtn:          { flex: 1, paddingVertical: 11, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tabBtnActive:    { borderBottomColor: '#e8712a' },
+  tabBtnText:      { fontSize: 9, letterSpacing: 3, color: '#444', fontFamily: 'monospace', fontWeight: 'bold' },
+  tabBtnTextActive:{ color: '#e8712a' },
   pageTitle: { fontSize: 22, fontWeight: 'bold', letterSpacing: 8, color: '#f0f0f0', fontFamily: 'monospace' },
   card: { backgroundColor: '#0a0a0a', borderWidth: 1, borderColor: '#1a1a1a', padding: 16, gap: 8 },
   cardTitle: { fontSize: 10, letterSpacing: 4, color: '#d97706', fontFamily: 'monospace', marginBottom: 4 },

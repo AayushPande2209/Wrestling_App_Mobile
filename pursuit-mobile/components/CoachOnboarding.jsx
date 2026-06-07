@@ -9,9 +9,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
-import WeightClassPicker from './WeightClassPicker'
-
-const WEIGHT_CLASSES = [106, 113, 120, 126, 132, 138, 144, 150, 157, 165, 175, 190, 215, 285]
+import WeightClassPicker, { WEIGHT_CLASSES } from './WeightClassPicker'
 
 const { width: SW } = Dimensions.get('window')
 
