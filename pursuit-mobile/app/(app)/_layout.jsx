@@ -41,7 +41,6 @@ const DRAWER_NAV = [
   { key: 'profile',  label: 'PROFILE',   icon: 'person-circle-outline',   href: '/(app)/profile' },
   { key: 'board',    label: 'BOARD',     icon: 'people-outline',           href: '/(app)/board' },
   { divider: true, key: 'd1' },
-  { key: 'notes',    label: 'NOTES',     icon: 'document-text-outline',    href: '/(app)/logs?tab=NOTES' },
   { key: 'timeline', label: 'TIMELINE',  icon: 'trending-up-outline',      href: '/(app)/records' },
   { key: 'records',  label: 'RECORDS',   icon: 'trophy-outline',           href: '/(app)/records' },
   { divider: true, key: 'd2' },
@@ -49,10 +48,11 @@ const DRAWER_NAV = [
 ]
 
 const ACTIVITY_CARDS = [
-  { key: 'workouts',   label: 'WORKOUTS',   icon: 'barbell-outline',    href: '/(app)/logs?tab=WORKOUTS' },
-  { key: 'matches',    label: 'MATCHES',    icon: 'shield-outline',     href: '/(app)/logs?tab=MATCHES' },
-  { key: 'goals',      label: 'GOALS',      icon: 'trophy-outline',     href: '/(app)/logs?tab=GOALS' },
-  { key: 'nutrition',  label: 'NUTRITION',  icon: 'nutrition-outline',  href: '/(app)/nutrition' },
+  { key: 'workouts',   label: 'WORKOUTS',   icon: 'barbell-outline',         href: '/(app)/logs?tab=WORKOUTS' },
+  { key: 'matches',    label: 'MATCHES',    icon: 'shield-outline',          href: '/(app)/logs?tab=MATCHES' },
+  { key: 'goals',      label: 'GOALS',      icon: 'trophy-outline',          href: '/(app)/logs?tab=GOALS' },
+  { key: 'notes',      label: 'NOTES',      icon: 'document-text-outline',   href: '/(app)/logs?tab=NOTES' },
+  { key: 'nutrition',  label: 'NUTRITION',  icon: 'nutrition-outline',       href: '/(app)/nutrition' },
 ]
 
 // ─── Other Drawer ─────────────────────────────────────────────────────────────
@@ -215,7 +215,7 @@ function ActivitySheet({ visible, onClose }) {
             <View style={as.cards}>
               {ACTIVITY_CARDS.map(card => (
                 <TouchableOpacity key={card.key} onPress={() => navTo(card.href)} activeOpacity={0.7} style={as.card}>
-                  <Ionicons name={card.icon} size={22} color={C.orange} />
+                  <Ionicons name={card.icon} size={18} color={C.orange} />
                   <Text style={as.cardLabel}>{card.label}</Text>
                 </TouchableOpacity>
               ))}
