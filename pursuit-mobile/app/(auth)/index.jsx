@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  KeyboardAvoidingView, Platform, StyleSheet,
+  KeyboardAvoidingView, Platform, StyleSheet, Image,
 } from 'react-native'
 import { useRouter } from 'expo-router'
+import * as WebBrowser from 'expo-web-browser'
+import { makeRedirectUri } from 'expo-auth-session'
 import { supabase } from '../../lib/supabase'
+
+WebBrowser.maybeCompleteAuthSession()
 
 export default function AuthScreen() {
   const [mode, setMode] = useState('login')
@@ -65,6 +69,33 @@ export default function AuthScreen() {
     }
   }
 
+  const handleGoogleSignIn = async () => {
+    setError(null)
+    setLoading(true)
+    try {
+      const redirectUrl = makeRedirectUri({ scheme: 'pursuit', path: 'auth/callback' })
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
+      })
+      if (error) throw error
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl)
+      if (result.type === 'success') {
+        const url = new URL(result.url)
+        const code = url.searchParams.get('code')
+        if (code) {
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+          if (exchangeError) throw exchangeError
+        }
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <KeyboardAvoidingView
       style={s.root}
@@ -100,6 +131,26 @@ export default function AuthScreen() {
             <TouchableOpacity onPress={() => switchMode('login')} style={s.backBtn}>
               <Text style={s.backBtnText}>← BACK TO SIGN IN</Text>
             </TouchableOpacity>
+          )}
+
+          {mode !== 'forgot' && (
+            <View style={s.oauthSection}>
+              <TouchableOpacity
+                onPress={handleGoogleSignIn}
+                disabled={loading}
+                style={[s.googleBtn, loading && s.btnDisabled]}
+                activeOpacity={0.7}
+              >
+                <Image source={require('../../assets/google-icon.png')} style={{ width: 18, height: 18 }} />
+                <Text style={s.googleBtnText}>CONTINUE WITH GOOGLE</Text>
+              </TouchableOpacity>
+
+              <View style={s.divider}>
+                <View style={s.dividerLine} />
+                <Text style={s.dividerText}>OR</Text>
+                <View style={s.dividerLine} />
+              </View>
+            </View>
           )}
 
           <View style={s.form}>
@@ -214,4 +265,14 @@ const s = StyleSheet.create({
   btnText: { fontSize: 10, letterSpacing: 6, color: '#0a0a0a', fontWeight: 'bold', fontFamily: 'monospace' },
   forgotBtn: { marginTop: 16, alignItems: 'center' },
   forgotText: { fontSize: 10, color: '#333', letterSpacing: 2, fontFamily: 'monospace' },
+  oauthSection: { paddingHorizontal: 28, paddingTop: 20 },
+  googleBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 10, backgroundColor: '#141414', borderWidth: 0.5, borderColor: '#333',
+    borderRadius: 6, padding: 12,
+  },
+  googleBtnText: { color: '#fff', fontSize: 11, letterSpacing: 1.4, fontFamily: 'monospace' },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 12 },
+  dividerLine: { flex: 1, height: 0.5, backgroundColor: '#222' },
+  dividerText: { fontSize: 9, color: '#444', letterSpacing: 0.15, fontFamily: 'monospace' },
 })

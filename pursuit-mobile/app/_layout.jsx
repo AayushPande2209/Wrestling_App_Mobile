@@ -24,10 +24,36 @@ function AuthGate({ children }) {
   useEffect(() => {
     if (session === undefined) return
     const inAuth = segments[0] === '(auth)'
+
     if (!session && !inAuth) {
-      router.replace('/(auth)')
-    } else if (session && inAuth) {
-      router.replace('/(app)')
+      router.replace('/(auth)/')
+      return
+    }
+
+    if (session && inAuth) {
+      ;(async () => {
+        const { data: wrestler } = await supabase
+          .from('wrestlers')
+          .select('id, coach_profile')
+          .eq('id', session.user.id)
+          .single()
+
+        if (!wrestler) {
+          await supabase.from('wrestlers').upsert(
+            {
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.user_metadata?.full_name ?? session.user.email,
+            },
+            { onConflict: 'id', ignoreDuplicates: true }
+          )
+          router.replace('/(auth)/coach-onboarding')
+        } else if (!wrestler.coach_profile) {
+          router.replace('/(auth)/coach-onboarding')
+        } else {
+          router.replace('/(app)/')
+        }
+      })()
     }
   }, [session, segments])
 
