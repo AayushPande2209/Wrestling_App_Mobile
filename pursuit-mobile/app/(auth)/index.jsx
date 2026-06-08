@@ -83,6 +83,10 @@ export default function AuthScreen() {
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl)
       if (result.type === 'success') {
         const url = new URL(result.url)
+        const errorParam = url.searchParams.get('error')
+        if (errorParam) throw new Error(
+          errorParam === 'access_denied' ? 'Google sign-in was cancelled.' : `Google sign-in failed: ${errorParam}`
+        )
         const code = url.searchParams.get('code')
         if (code) {
           const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
