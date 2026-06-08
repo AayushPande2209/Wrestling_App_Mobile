@@ -240,7 +240,7 @@ export default function WeightLog() {
   const recentLogs = [...logs].reverse().slice(0, 10)
 
   return (
-    <ScrollView style={s.root} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+    <ScrollView style={s.root} contentContainerStyle={s.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
       {/* Header */}
       <View style={s.header}>

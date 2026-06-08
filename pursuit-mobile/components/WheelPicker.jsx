@@ -26,12 +26,11 @@ function Column({ items, initialIndex = 0, onIndexChange, onLiveChange }) {
     onLiveChange(Math.max(0, Math.min(idx, items.length - 1)))
   }, [items.length, onLiveChange])
 
-  // Snap and commit on drag/momentum end
   const handleScrollEnd = useCallback((e) => {
     const idx = Math.round(e.nativeEvent.contentOffset.y / ITEM_H)
     const clamped = Math.max(0, Math.min(idx, items.length - 1))
     setSelectedIndex(clamped)
-    ref.current?.scrollTo({ y: clamped * ITEM_H, animated: true })
+    ref.current?.scrollTo({ y: clamped * ITEM_H, animated: false })
     onIndexChange(clamped)
     onLiveChange(clamped)
   }, [items.length, onIndexChange, onLiveChange])
@@ -43,10 +42,10 @@ function Column({ items, initialIndex = 0, onIndexChange, onLiveChange }) {
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_H}
         decelerationRate="fast"
+        nestedScrollEnabled
         onScroll={handleScroll}
         scrollEventThrottle={50}
         onMomentumScrollEnd={handleScrollEnd}
-        onScrollEndDrag={handleScrollEnd}
         contentContainerStyle={wp.colContent}
       >
         {items.map((item, i) => {

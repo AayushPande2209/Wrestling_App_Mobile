@@ -35,7 +35,7 @@ export default function WeightClassPicker({ value, onChange }) {
     const clamped = Math.max(0, Math.min(idx, WEIGHT_CLASSES.length - 1))
     setSelectedIndex(clamped)
     setLiveIndex(clamped)
-    ref.current?.scrollTo({ y: clamped * ITEM_H, animated: true })
+    ref.current?.scrollTo({ y: clamped * ITEM_H, animated: false })
     onChange(WEIGHT_CLASSES[clamped])
   }, [onChange])
 
@@ -52,10 +52,10 @@ export default function WeightClassPicker({ value, onChange }) {
           showsVerticalScrollIndicator={false}
           snapToInterval={ITEM_H}
           decelerationRate="fast"
+          nestedScrollEnabled
           onScroll={handleScroll}
           scrollEventThrottle={50}
           onMomentumScrollEnd={handleScrollEnd}
-          onScrollEndDrag={handleScrollEnd}
           contentContainerStyle={wc.colContent}
         >
           {WEIGHT_CLASSES.map((cls, i) => {
