@@ -1,14 +1,25 @@
 import { useState } from 'react'
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView,
+  View, TouchableOpacity, ScrollView,
   KeyboardAvoidingView, Platform, StyleSheet, Image,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 import { makeRedirectUri } from 'expo-auth-session'
 import { supabase } from '../../lib/supabase'
+import AppText from '../../components/ui/AppText'
+import TextField from '../../components/ui/TextField'
+import Button from '../../components/ui/Button'
+import Card from '../../components/ui/Card'
+import SegmentedControl from '../../components/ui/SegmentedControl'
+import { colors, spacing, radii } from '../../constants/theme'
 
 WebBrowser.maybeCompleteAuthSession()
+
+const AUTH_TABS = [
+  { value: 'login', label: 'Sign in' },
+  { value: 'signup', label: 'Sign up' },
+]
 
 export default function AuthScreen() {
   const [mode, setMode] = useState('login')
@@ -102,181 +113,155 @@ export default function AuthScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={s.root}
+      style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        {/* Wordmark */}
-        <View style={s.wordmark}>
-          <Text style={s.title}>PURSUIT</Text>
-          <Text style={s.subtitle}>WRESTLER TRAINING SYSTEM</Text>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <View style={styles.wordmark}>
+          <AppText variant="largeTitle" color={colors.accent}>Pursuit</AppText>
+          <AppText variant="footnote" color={colors.textTertiary}>Wrestler training system</AppText>
         </View>
 
-        {/* Card */}
-        <View style={s.card}>
-          {/* Tabs */}
+        <Card>
           {mode !== 'forgot' && (
-            <View style={s.tabs}>
-              {[{ key: 'login', label: 'SIGN IN' }, { key: 'signup', label: 'SIGN UP' }].map(
-                ({ key, label }) => (
-                  <TouchableOpacity
-                    key={key}
-                    onPress={() => switchMode(key)}
-                    style={[s.tab, mode === key && s.tabActive]}
-                  >
-                    <Text style={[s.tabText, mode === key && s.tabTextActive]}>{label}</Text>
-                  </TouchableOpacity>
-                )
-              )}
-            </View>
+            <SegmentedControl
+              options={AUTH_TABS}
+              value={mode}
+              onChange={switchMode}
+            />
           )}
 
           {mode === 'forgot' && (
-            <TouchableOpacity onPress={() => switchMode('login')} style={s.backBtn}>
-              <Text style={s.backBtnText}>← BACK TO SIGN IN</Text>
+            <TouchableOpacity onPress={() => switchMode('login')} style={styles.backBtn}>
+              <AppText variant="footnote" color={colors.accent}>← Back to sign in</AppText>
             </TouchableOpacity>
           )}
 
           {mode !== 'forgot' && (
-            <View style={s.oauthSection}>
+            <View style={styles.oauthSection}>
               <TouchableOpacity
                 onPress={handleGoogleSignIn}
                 disabled={loading}
-                style={[s.googleBtn, loading && s.btnDisabled]}
+                style={[styles.googleBtn, loading && styles.btnDisabled]}
                 activeOpacity={0.7}
               >
                 <Image source={require('../../assets/google-icon.png')} style={{ width: 18, height: 18 }} />
-                <Text style={s.googleBtnText}>CONTINUE WITH GOOGLE</Text>
+                <AppText variant="body">Continue with Google</AppText>
               </TouchableOpacity>
-
-              <View style={s.divider}>
-                <View style={s.dividerLine} />
-                <Text style={s.dividerText}>OR</Text>
-                <View style={s.dividerLine} />
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <AppText variant="caption" color={colors.textTertiary}>or</AppText>
+                <View style={styles.dividerLine} />
               </View>
             </View>
           )}
 
-          <View style={s.form}>
+          <View style={styles.form}>
             {mode === 'forgot' && (
-              <Text style={s.resetLabel}>RESET PASSWORD</Text>
+              <AppText variant="headline" style={{ marginBottom: spacing.sm }}>Reset password</AppText>
             )}
 
-            <Text style={s.fieldLabel}>EMAIL</Text>
-            <TextInput
+            <TextField
+              label="Email"
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
               autoComplete="email"
-              style={s.input}
               placeholder="wrestler@team.edu"
-              placeholderTextColor="#2a2a2a"
             />
 
             {mode !== 'forgot' && (
-              <>
-                <Text style={[s.fieldLabel, { marginTop: 16 }]}>PASSWORD</Text>
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                  style={s.input}
-                  placeholderTextColor="#2a2a2a"
-                />
-              </>
+              <TextField
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                style={{ marginTop: spacing.sm }}
+              />
             )}
 
             {error && (
-              <View style={s.errorBox}>
-                <Text style={s.errorText}>{error}</Text>
+              <View style={styles.errorBox}>
+                <AppText variant="footnote" color={colors.error}>{error}</AppText>
               </View>
             )}
 
             {forgotSent ? (
-              <View style={s.successBox}>
-                <Text style={s.successText}>Check your email for a reset link.</Text>
+              <View style={styles.successBox}>
+                <AppText variant="footnote" color={colors.success}>Check your email for a reset link.</AppText>
               </View>
             ) : signupSent ? (
-              <View style={s.successBox}>
-                <Text style={s.successText}>Check your email to confirm your account, then sign in.</Text>
+              <View style={styles.successBox}>
+                <AppText variant="footnote" color={colors.success}>Check your email to confirm your account, then sign in.</AppText>
               </View>
             ) : (
-              <TouchableOpacity
-                onPress={handleSubmit}
-                disabled={loading}
-                style={[s.btn, loading && s.btnDisabled]}
-              >
-                <Text style={s.btnText}>
-                  {loading
-                    ? 'LOADING...'
+              <Button
+                label={
+                  loading
+                    ? 'Loading…'
                     : mode === 'login'
-                    ? 'SIGN IN'
+                    ? 'Sign in'
                     : mode === 'signup'
-                    ? 'CREATE ACCOUNT'
-                    : 'SEND RESET LINK'}
-                </Text>
-              </TouchableOpacity>
+                    ? 'Create account'
+                    : 'Send reset link'
+                }
+                onPress={handleSubmit}
+                loading={loading}
+                style={{ marginTop: spacing.md }}
+              />
             )}
 
             {mode === 'login' && !forgotSent && (
-              <TouchableOpacity onPress={() => switchMode('forgot')} style={s.forgotBtn}>
-                <Text style={s.forgotText}>Forgot password?</Text>
+              <TouchableOpacity onPress={() => switchMode('forgot')} style={styles.forgotBtn}>
+                <AppText variant="footnote" color={colors.textTertiary}>Forgot password?</AppText>
               </TouchableOpacity>
             )}
           </View>
-        </View>
+        </Card>
       </ScrollView>
     </KeyboardAvoidingView>
   )
 }
 
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0c0c0c' },
-  scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 48 },
-  wordmark: { marginBottom: 40 },
-  title: { fontSize: 40, fontWeight: 'bold', letterSpacing: 14, color: '#d97706', fontFamily: 'monospace' },
-  subtitle: { fontSize: 10, color: '#333', letterSpacing: 4, marginTop: 6, fontFamily: 'monospace' },
-  card: { borderWidth: 1, borderColor: '#1a1a1a', backgroundColor: '#0a0a0a' },
-  tabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
-  tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: '#d97706', marginBottom: -1 },
-  tabText: { fontSize: 10, letterSpacing: 4, color: '#888', fontFamily: 'monospace' },
-  tabTextActive: { color: '#d97706' },
-  backBtn: { paddingHorizontal: 28, paddingTop: 20 },
-  backBtnText: { fontSize: 10, color: '#888', letterSpacing: 2, fontFamily: 'monospace' },
-  form: { padding: 28 },
-  resetLabel: { fontSize: 10, letterSpacing: 4, color: '#d97706', fontFamily: 'monospace', marginBottom: 16 },
-  fieldLabel: { fontSize: 10, letterSpacing: 4, color: '#aaa', fontFamily: 'monospace', marginBottom: 8 },
-  input: {
-    backgroundColor: '#060606',
-    borderWidth: 1,
-    borderColor: '#1e1e1e',
-    color: '#f0f0f0',
-    fontFamily: 'monospace',
-    fontSize: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.bg },
+  scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.xl },
+  wordmark: { marginBottom: spacing.xl, gap: 4 },
+  backBtn: { marginBottom: spacing.sm },
+  form: { marginTop: spacing.md, gap: spacing.sm },
+  oauthSection: { marginTop: spacing.md },
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.separator,
+    borderRadius: radii.sm,
+    padding: spacing.md,
     minHeight: 44,
   },
-  errorBox: { borderWidth: 1, borderColor: 'rgba(220,38,38,0.5)', backgroundColor: 'rgba(69,10,10,0.2)', padding: 12, marginTop: 12 },
-  errorText: { fontSize: 11, color: '#f87171', fontFamily: 'monospace' },
-  successBox: { borderWidth: 1, borderColor: 'rgba(22,163,74,0.5)', backgroundColor: 'rgba(5,46,22,0.2)', padding: 12, marginTop: 12 },
-  successText: { fontSize: 11, color: '#22c55e', fontFamily: 'monospace' },
-  btn: { backgroundColor: '#d97706', marginTop: 16, paddingVertical: 12, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
-  btnDisabled: { opacity: 0.4 },
-  btnText: { fontSize: 10, letterSpacing: 6, color: '#0a0a0a', fontWeight: 'bold', fontFamily: 'monospace' },
-  forgotBtn: { marginTop: 16, alignItems: 'center' },
-  forgotText: { fontSize: 10, color: '#333', letterSpacing: 2, fontFamily: 'monospace' },
-  oauthSection: { paddingHorizontal: 28, paddingTop: 20 },
-  googleBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 10, backgroundColor: '#141414', borderWidth: 0.5, borderColor: '#333',
-    borderRadius: 6, padding: 12,
+  btnDisabled: { opacity: 0.45 },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginVertical: spacing.md },
+  dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.separator },
+  errorBox: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.error,
+    backgroundColor: colors.errorMuted,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    marginTop: spacing.sm,
   },
-  googleBtnText: { color: '#fff', fontSize: 11, letterSpacing: 1.4, fontFamily: 'monospace' },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 12 },
-  dividerLine: { flex: 1, height: 0.5, backgroundColor: '#222' },
-  dividerText: { fontSize: 9, color: '#444', letterSpacing: 0.15, fontFamily: 'monospace' },
+  successBox: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.success,
+    backgroundColor: colors.successMuted,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    marginTop: spacing.sm,
+  },
+  forgotBtn: { marginTop: spacing.md, alignItems: 'center' },
 })

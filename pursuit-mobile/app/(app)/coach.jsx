@@ -9,23 +9,12 @@ import CoachOnboarding from '../../components/CoachOnboarding'
 const API_URL = process.env.EXPO_PUBLIC_API_URL
 
 
-function StatusChip({ label, value, highlight, green }) {
-  return (
-    <View style={s.chip}>
-      <Text style={s.chipLabel}>{label}</Text>
-      <Text style={[s.chipValue, green ? { color: '#22c55e' } : highlight ? { color: '#e8712a' } : { color: '#aaa' }]}>
-        {value}
-      </Text>
-    </View>
-  )
-}
-
 function Message({ role, content }) {
   const isUser = role === 'user'
   return (
     <View style={[s.msgContainer, isUser ? s.msgRight : s.msgLeft]}>
       <View style={[s.msgBubble, isUser ? s.msgBubbleUser : s.msgBubbleCoach]}>
-        {!isUser && <Text style={s.coachLabel}>COACH</Text>}
+        {!isUser && <Text style={s.coachLabel}>Coach</Text>}
         <Text style={s.msgText}>{content}</Text>
       </View>
     </View>
@@ -125,10 +114,8 @@ export default function Coach() {
     }
   }
 
-  const rawCut = wrestler?.current_weight != null && wrestler?.weight_class != null
-    ? wrestler.current_weight - wrestler.weight_class : null
-  const lbsToCut = rawCut !== null ? Math.max(0, rawCut) : null
-  const onWeight = rawCut !== null && rawCut <= 0
+  const onWeight = wrestler?.current_weight != null && wrestler?.weight_class != null
+    && wrestler.current_weight <= wrestler.weight_class
   let daysOut = null
   if (nextEvent?.starts_at) {
     daysOut = Math.max(0, Math.ceil((new Date(nextEvent.starts_at) - new Date()) / 86_400_000))
@@ -137,7 +124,7 @@ export default function Coach() {
   if (initialLoading) {
     return (
       <View style={s.center}>
-        <ActivityIndicator color="#e8712a" size="large" />
+        <ActivityIndicator color="#FF6B2C" size="large" />
       </View>
     )
   }
@@ -149,36 +136,17 @@ export default function Coach() {
   // Chat
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      {/* Header */}
-      <View style={s.chatHeader}>
-        <Text style={s.chatTitle}>COACH</Text>
-        <Text style={s.chatSubtitle}>AI weight cut coach — knows your logs, matches, and schedule</Text>
-      </View>
-
-      {/* Status bar */}
-      <View style={s.statusBar}>
-        {wrestler?.current_weight != null && (
-          <StatusChip label="CURRENT" value={`${wrestler.current_weight} LBS`} />
-        )}
-        {lbsToCut !== null && (
-          <StatusChip label="TO CUT" value={onWeight ? 'ON WEIGHT' : `${lbsToCut.toFixed(1)} LBS`} highlight={!onWeight && lbsToCut > 0} green={onWeight} />
-        )}
-        {daysOut !== null && (
-          <StatusChip label="NEXT EVENT" value={daysOut === 0 ? 'TODAY' : `${daysOut}D`} highlight={daysOut <= 3 && daysOut > 0} />
-        )}
-      </View>
-
       {/* Phase badge */}
       {(() => {
         let label, color, bg
         if (onWeight) {
-          label = 'MAINTENANCE MODE'; color = '#4ade80'; bg = '#1a2a1a'
+          label = 'On weight'; color = '#30D158'; bg = 'rgba(48, 209, 88, 0.15)'
         } else if (daysOut === null) {
           return null
         } else if (daysOut === 0) {
-          label = 'SAME-DAY CUT'; color = '#e24a4a'; bg = 'rgba(226,74,74,0.12)'
+          label = 'Same-day cut'; color = '#FF453A'; bg = 'rgba(255, 69, 58, 0.15)'
         } else {
-          label = 'LEAD-UP PHASE — DIET CUT'; color = '#e8712a'; bg = '#1e1208'
+          label = 'Lead-up phase'; color = '#FF6B2C'; bg = 'rgba(255, 107, 44, 0.15)'
         }
         return (
           <View style={[s.phaseBadge, { backgroundColor: bg }]}>
@@ -198,8 +166,8 @@ export default function Coach() {
         {sending && (
           <View style={s.msgLeft}>
             <View style={s.msgBubbleCoach}>
-              <Text style={s.coachLabel}>COACH</Text>
-              <Text style={s.thinkingText}>thinking...</Text>
+              <Text style={s.coachLabel}>Coach</Text>
+              <Text style={s.thinkingText}>Thinking…</Text>
             </View>
           </View>
         )}
@@ -231,7 +199,7 @@ export default function Coach() {
           disabled={!input.trim() || sending}
           style={[s.sendBtn, (!input.trim() || sending) && s.btnDisabled]}
         >
-          <Text style={s.sendBtnText}>SEND</Text>
+          <Text style={s.sendBtnText}>Send</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -239,36 +207,28 @@ export default function Coach() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0d0d0d' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0d0d0d' },
+  root: { flex: 1, backgroundColor: '#000000' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000000' },
   btnDisabled: { opacity: 0.4 },
-  // Chat
-  chatHeader: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
-  chatTitle: { fontSize: 22, fontWeight: 'bold', letterSpacing: 8, color: '#f0f0f0', fontFamily: 'monospace' },
-  chatSubtitle: { fontSize: 10, color: '#555', fontFamily: 'monospace', marginTop: 2 },
-  statusBar: { flexDirection: 'row', gap: 16, paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#1f1f1f', backgroundColor: '#111' },
-  chip: {},
-  chipLabel: { fontSize: 8, letterSpacing: 4, color: '#555', fontFamily: 'monospace' },
-  chipValue: { fontSize: 11, fontWeight: 'bold', fontFamily: 'monospace' },
   messages: { flex: 1 },
-  messagesContent: { padding: 12, gap: 10 },
-  emptyMsg: { fontSize: 12, color: '#333', fontFamily: 'monospace', padding: 8 },
+  messagesContent: { padding: 16, gap: 12 },
+  emptyMsg: { fontSize: 15, color: '#636366', padding: 8 },
   msgContainer: { paddingHorizontal: 4 },
   msgRight: { alignItems: 'flex-end' },
   msgLeft: { alignItems: 'flex-start' },
-  msgBubble: { maxWidth: '84%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 2 },
-  msgBubbleUser: { backgroundColor: '#111', borderWidth: 1, borderColor: 'rgba(232,113,42,0.4)' },
-  msgBubbleCoach: { backgroundColor: '#0d0d0d', borderWidth: 1, borderColor: '#1f1f1f' },
-  coachLabel: { fontSize: 9, letterSpacing: 5, color: '#e8712a', fontFamily: 'monospace', marginBottom: 6 },
-  msgText: { fontSize: 13, color: '#f0f0f0', fontFamily: 'monospace', lineHeight: 19 },
-  thinkingText: { fontSize: 13, color: '#555', fontFamily: 'monospace' },
-  errorBanner: { marginHorizontal: 16, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(220,38,38,0.5)', backgroundColor: 'rgba(69,10,10,0.2)', padding: 10 },
-  errorBannerText: { fontSize: 11, color: '#f87171', fontFamily: 'monospace' },
-  phaseBadge: { paddingHorizontal: 16, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
-  phaseBadgeText: { fontSize: 9, letterSpacing: 4, fontFamily: 'monospace', fontWeight: 'bold' },
-  disclaimer: { fontSize: 9, color: '#888888', fontFamily: 'monospace', textAlign: 'center', paddingVertical: 4, paddingHorizontal: 16 },
-  inputBar: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1f1f1f', backgroundColor: '#0d0d0d' },
-  chatInput: { flex: 1, backgroundColor: '#111', borderWidth: 1, borderColor: '#1f1f1f', color: '#f0f0f0', fontFamily: 'monospace', fontSize: 13, paddingHorizontal: 14, paddingVertical: 10, minHeight: 44 },
-  sendBtn: { backgroundColor: '#e8712a', paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center', minHeight: 44 },
-  sendBtnText: { fontSize: 10, letterSpacing: 4, color: '#0d0d0d', fontWeight: 'bold', fontFamily: 'monospace' },
+  msgBubble: { maxWidth: '84%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16 },
+  msgBubbleUser: { backgroundColor: '#2C2C2E' },
+  msgBubbleCoach: { backgroundColor: '#1C1C1E', borderWidth: StyleSheet.hairlineWidth, borderColor: '#38383A' },
+  coachLabel: { fontSize: 12, color: '#FF6B2C', marginBottom: 4, fontWeight: '600' },
+  msgText: { fontSize: 17, color: '#FFFFFF', lineHeight: 22 },
+  thinkingText: { fontSize: 17, color: '#8E8E93' },
+  errorBanner: { marginHorizontal: 16, marginBottom: 8, borderWidth: StyleSheet.hairlineWidth, borderColor: '#FF453A', backgroundColor: 'rgba(255, 69, 58, 0.15)', padding: 12, borderRadius: 12 },
+  errorBannerText: { fontSize: 15, color: '#FF453A' },
+  phaseBadge: { paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#38383A' },
+  phaseBadgeText: { fontSize: 13, fontWeight: '600' },
+  disclaimer: { fontSize: 12, color: '#8E8E93', textAlign: 'center', paddingVertical: 4, paddingHorizontal: 16 },
+  inputBar: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#38383A', backgroundColor: '#000000' },
+  chatInput: { flex: 1, backgroundColor: '#1C1C1E', borderWidth: StyleSheet.hairlineWidth, borderColor: '#38383A', color: '#FFFFFF', fontSize: 17, paddingHorizontal: 14, paddingVertical: 10, minHeight: 44, borderRadius: 20 },
+  sendBtn: { backgroundColor: '#FF6B2C', paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center', minHeight: 44, borderRadius: 20 },
+  sendBtnText: { fontSize: 15, color: '#FFFFFF', fontWeight: '600' },
 })

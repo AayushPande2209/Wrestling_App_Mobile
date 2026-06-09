@@ -5,10 +5,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        orange: { DEFAULT: '#e8712a', dark: '#d4621f' },
-        surface: '#111',
-        border: '#1f1f1f',
-        bg: '#0d0d0d',
+        accent: { DEFAULT: '#FF6B2C' },
+        surface: '#1C1C1E',
+        border: '#38383A',
+        bg: '#000000',
       },
     },
   },

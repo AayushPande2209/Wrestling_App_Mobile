@@ -1,8 +1,10 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { View, Text, ScrollView, StyleSheet } from 'react-native'
+import { colors } from '../constants/theme'
 
 const ITEM_H = 44
 const VISIBLE = 5
+const PAD_ITEMS = 2
 const DIGITS   = ['0','1','2','3','4','5','6','7','8','9']
 const HUNDREDS = ['0','1','2']
 
@@ -11,8 +13,8 @@ const makeWeight = (h, t, o, d) => `${h}${t}${o}.${d}`
 function Column({ items, initialIndex = 0, onIndexChange, onLiveChange }) {
   const ref = useRef(null)
   const [selectedIndex, setSelectedIndex] = useState(initialIndex)
+  const [liveIndex, setLiveIndex] = useState(initialIndex)
 
-  // Scroll to initial position after layout
   useEffect(() => {
     const timer = setTimeout(() => {
       ref.current?.scrollTo({ y: initialIndex * ITEM_H, animated: false })
@@ -20,16 +22,18 @@ function Column({ items, initialIndex = 0, onIndexChange, onLiveChange }) {
     return () => clearTimeout(timer)
   }, [])
 
-  // Update live display during scroll (throttled)
   const handleScroll = useCallback((e) => {
     const idx = Math.round(e.nativeEvent.contentOffset.y / ITEM_H)
-    onLiveChange(Math.max(0, Math.min(idx, items.length - 1)))
+    const clamped = Math.max(0, Math.min(idx, items.length - 1))
+    setLiveIndex(clamped)
+    onLiveChange(clamped)
   }, [items.length, onLiveChange])
 
   const handleScrollEnd = useCallback((e) => {
     const idx = Math.round(e.nativeEvent.contentOffset.y / ITEM_H)
     const clamped = Math.max(0, Math.min(idx, items.length - 1))
     setSelectedIndex(clamped)
+    setLiveIndex(clamped)
     ref.current?.scrollTo({ y: clamped * ITEM_H, animated: false })
     onIndexChange(clamped)
     onLiveChange(clamped)
@@ -44,18 +48,20 @@ function Column({ items, initialIndex = 0, onIndexChange, onLiveChange }) {
         decelerationRate="fast"
         nestedScrollEnabled
         onScroll={handleScroll}
-        scrollEventThrottle={50}
+        scrollEventThrottle={16}
         onMomentumScrollEnd={handleScrollEnd}
+        onScrollEndDrag={handleScrollEnd}
         contentContainerStyle={wp.colContent}
       >
         {items.map((item, i) => {
-          const dist = Math.abs(i - selectedIndex)
+          const dist = Math.abs(i - liveIndex)
+          const isCenter = dist === 0
           return (
             <View key={i} style={wp.item}>
               <Text style={[
                 wp.itemText,
-                dist === 0 && wp.itemSelected,
-                { opacity: dist === 0 ? 1 : Math.max(0.12, 0.55 - dist * 0.2) },
+                isCenter && wp.itemSelected,
+                { opacity: isCenter ? 1 : Math.max(0.15, 0.6 - dist * 0.2) },
               ]}>
                 {item}
               </Text>
@@ -63,15 +69,12 @@ function Column({ items, initialIndex = 0, onIndexChange, onLiveChange }) {
           )
         })}
       </ScrollView>
-      {/* Selection bracket lines */}
       <View pointerEvents="none" style={wp.lineTop} />
       <View pointerEvents="none" style={wp.lineBot} />
     </View>
   )
 }
 
-// value: string like "152.5"
-// onChange: called with new weight string on every column commit (scroll end)
 export default function WheelPicker({ value, onChange }) {
   const parseDigits = (v) => {
     const n = parseFloat(v)
@@ -85,10 +88,8 @@ export default function WheelPicker({ value, onChange }) {
   }
 
   const init = parseDigits(value)
-  // digitsRef always holds the latest committed digits for stale-closure-free onChange calls
   const digitsRef = useRef({ ...init })
 
-  // Live display (updates ~20fps during scroll via onLiveChange)
   const [liveH, setLiveH] = useState(init.h)
   const [liveT, setLiveT] = useState(init.t)
   const [liveO, setLiveO] = useState(init.o)
@@ -120,13 +121,11 @@ export default function WheelPicker({ value, onChange }) {
 
   return (
     <View style={wp.root}>
-      {/* Live assembled weight display */}
       <Text style={wp.display}>
         {liveH}{liveT}{liveO}.{liveD}
-        <Text style={wp.displayUnit}> LBS</Text>
+        <Text style={wp.displayUnit}> lbs</Text>
       </Text>
 
-      {/* Four digit columns + decimal separator */}
       <View style={wp.wheel}>
         <Column items={HUNDREDS} initialIndex={init.h} onIndexChange={handleH} onLiveChange={setLiveH} />
         <Column items={DIGITS}   initialIndex={init.t} onIndexChange={handleT} onLiveChange={setLiveT} />
@@ -142,22 +141,16 @@ export default function WheelPicker({ value, onChange }) {
 
 const wp = StyleSheet.create({
   root:          { gap: 12 },
-
-  display:       { fontSize: 36, fontWeight: 'bold', color: '#e8712a', fontFamily: 'monospace', textAlign: 'center', letterSpacing: 2 },
-  displayUnit:   { fontSize: 16, color: '#888888', fontFamily: 'monospace', fontWeight: 'normal', letterSpacing: 0 },
-
+  display:       { fontSize: 34, fontWeight: '700', color: colors.accent, textAlign: 'center', fontVariant: ['tabular-nums'] },
+  displayUnit:   { fontSize: 17, color: colors.textSecondary, fontWeight: '400' },
   wheel:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-
   colWrap:       { width: 52, height: ITEM_H * VISIBLE, overflow: 'hidden' },
-  colContent:    { paddingVertical: ITEM_H * 2 },
+  colContent:    { paddingVertical: ITEM_H * PAD_ITEMS },
   item:          { height: ITEM_H, alignItems: 'center', justifyContent: 'center' },
-  itemText:      { fontSize: 20, color: '#555555', fontFamily: 'monospace' },
-  itemSelected:  { fontSize: 28, fontWeight: 'bold', color: '#ffffff' },
-
-  // Hairlines that bracket the selected (center) item
-  lineTop:       { position: 'absolute', top: ITEM_H * 2,       left: 6, right: 6, height: 1, backgroundColor: '#3a3a3a' },
-  lineBot:       { position: 'absolute', top: ITEM_H * 2 + ITEM_H, left: 6, right: 6, height: 1, backgroundColor: '#3a3a3a' },
-
+  itemText:      { fontSize: 20, color: colors.textTertiary },
+  itemSelected:  { fontSize: 28, fontWeight: '700', color: colors.text },
+  lineTop:       { position: 'absolute', top: ITEM_H * PAD_ITEMS, left: 6, right: 6, height: StyleSheet.hairlineWidth, backgroundColor: colors.separator },
+  lineBot:       { position: 'absolute', top: ITEM_H * PAD_ITEMS + ITEM_H, left: 6, right: 6, height: StyleSheet.hairlineWidth, backgroundColor: colors.separator },
   separator:     { width: 20, height: ITEM_H * VISIBLE, alignItems: 'center', justifyContent: 'center' },
-  separatorText: { fontSize: 28, fontWeight: 'bold', color: '#ffffff', fontFamily: 'monospace' },
+  separatorText: { fontSize: 28, fontWeight: '700', color: colors.text },
 })

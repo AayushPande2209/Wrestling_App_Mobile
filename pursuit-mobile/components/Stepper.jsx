@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { colors, radii, MIN_TOUCH } from '../constants/theme'
 
 export default function Stepper({ value, onChange, min = 0, max = 999, step = 1, suffix = '' }) {
   return (
@@ -23,8 +24,17 @@ export default function Stepper({ value, onChange, min = 0, max = 999, step = 1,
 }
 
 const st = StyleSheet.create({
-  stepper:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  stepBtn:     { width: 28, height: 28, backgroundColor: '#1e1208', borderRadius: 4, borderWidth: 0.5, borderColor: '#2a1a08', alignItems: 'center', justifyContent: 'center' },
-  stepBtnText: { color: '#e8712a', fontSize: 16, fontWeight: '600', lineHeight: 20 },
-  stepValue:   { color: '#ccc', fontSize: 11, fontFamily: 'monospace', minWidth: 36, textAlign: 'center' },
+  stepper:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  stepBtn:     {
+    width: MIN_TOUCH - 8,
+    height: MIN_TOUCH - 8,
+    backgroundColor: colors.accentMuted,
+    borderRadius: radii.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.separator,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepBtnText: { color: colors.accent, fontSize: 20, fontWeight: '600', lineHeight: 24 },
+  stepValue:   { color: colors.text, fontSize: 15, fontVariant: ['tabular-nums'], minWidth: 40, textAlign: 'center' },
 })

@@ -10,18 +10,9 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../lib/supabase'
 import WeightClassPicker, { WEIGHT_CLASSES } from './WeightClassPicker'
+import { colors, radii, spacing, MIN_TOUCH } from '../constants/theme'
 
 const { width: SW } = Dimensions.get('window')
-
-const C = {
-  bg: '#0a0a0a',
-  surface: '#141414',
-  border: '#1f1f1f',
-  orange: '#e8712a',
-  text: '#ffffff',
-  textMuted: '#888888',
-  textDim: '#555555',
-}
 
 const QUESTIONS = [
   {
@@ -224,10 +215,10 @@ export default function CoachOnboarding({ onComplete, initialAnswers = null, edi
           {/* Coach chat bubble */}
           <View style={s.coachRow}>
             <View style={s.coachIconWrap}>
-              <Ionicons name="hardware-chip-outline" size={16} color={C.orange} />
+              <Ionicons name="hardware-chip-outline" size={16} color={colors.accent} />
             </View>
             <View style={s.coachBubble}>
-              <Text style={s.coachLabel}>COACH</Text>
+              <Text style={s.coachLabel}>Coach</Text>
               <Text style={s.questionText}>{q.question}</Text>
             </View>
           </View>
@@ -294,7 +285,7 @@ export default function CoachOnboarding({ onComplete, initialAnswers = null, edi
                       style={[s.option, active && s.optionActive]}
                     >
                       <Text style={[s.optionText, active && s.optionTextActive]}>{opt}</Text>
-                      {active && <Ionicons name="checkmark" size={13} color={C.orange} />}
+                      {active && <Ionicons name="checkmark" size={13} color={colors.accent} />}
                     </TouchableOpacity>
                   )
                 })}
@@ -314,11 +305,11 @@ export default function CoachOnboarding({ onComplete, initialAnswers = null, edi
           activeOpacity={0.7}
           style={[s.nextBtn, !canAdvance && s.nextBtnDisabled]}
         >
-          <Text style={s.nextBtnText}>{isLast ? (editMode ? 'SAVE CHANGES' : 'FINISH SETUP') : 'NEXT →'}</Text>
+          <Text style={s.nextBtnText}>{isLast ? (editMode ? 'Save changes' : 'Finish setup') : 'Next'}</Text>
         </TouchableOpacity>
         {q.optional && (
           <TouchableOpacity onPress={() => handleNext(true)} style={s.skipBtn}>
-            <Text style={s.skipText}>SKIP →</Text>
+            <Text style={s.skipText}>Skip</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -327,92 +318,95 @@ export default function CoachOnboarding({ onComplete, initialAnswers = null, edi
 }
 
 const s = StyleSheet.create({
-  root:             { flex: 1, backgroundColor: C.bg },
+  root:             { flex: 1, backgroundColor: colors.bg },
   center:           { justifyContent: 'center', alignItems: 'center' },
-  savingText:       { fontSize: 11, letterSpacing: 6, color: C.textDim, fontFamily: 'monospace' },
+  savingText:       { fontSize: 15, color: colors.textSecondary },
 
-  progressSection:  { paddingHorizontal: 20, paddingBottom: 8 },
-  progressRow:      { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  progressTrack:    { flex: 1, height: 3, backgroundColor: '#1f1f1f', borderRadius: 2, overflow: 'hidden' },
-  progressFill:     { height: '100%', backgroundColor: C.orange, borderRadius: 2 },
-  stepLabel:        { fontSize: 9, letterSpacing: 2, color: C.textDim, fontFamily: 'monospace', minWidth: 48, textAlign: 'right' },
-  cancelBtn:        { marginLeft: 12, padding: 4 },
-  cancelBtnText:    { fontSize: 14, color: C.textDim, fontFamily: 'monospace' },
+  progressSection:  { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  progressRow:      { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  progressTrack:    { flex: 1, height: 4, backgroundColor: colors.surfaceElevated, borderRadius: radii.full, overflow: 'hidden' },
+  progressFill:     { height: '100%', backgroundColor: colors.accent, borderRadius: radii.full },
+  stepLabel:        { fontSize: 13, color: colors.textTertiary, minWidth: 48, textAlign: 'right' },
+  cancelBtn:        { marginLeft: spacing.sm, padding: 4 },
+  cancelBtnText:    { fontSize: 18, color: colors.textSecondary },
 
   scroll:           { flex: 1 },
-  scrollContent:    { padding: 20, paddingTop: 16, paddingBottom: 8 },
-  questionBlock:    { gap: 24 },
+  scrollContent:    { padding: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
+  questionBlock:    { gap: spacing.lg },
 
-  coachRow:         { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  coachRow:         { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
   coachIconWrap:    {
-    width: 32, height: 32,
-    borderRadius: 16,
-    backgroundColor: C.surface,
-    borderWidth: 1, borderColor: '#2a1a06',
+    width: 36, height: 36,
+    borderRadius: radii.full,
+    backgroundColor: colors.accentMuted,
     alignItems: 'center', justifyContent: 'center',
     marginTop: 4,
   },
   coachBubble:      {
     flex: 1,
-    backgroundColor: C.surface,
-    borderWidth: 1, borderColor: '#1f1f1f',
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 4,
-    borderBottomLeftRadius: 4,
-    borderBottomRightRadius: 4,
-    padding: 14,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.separator,
+    borderRadius: radii.lg,
+    borderTopLeftRadius: radii.sm,
+    padding: spacing.md,
   },
-  coachLabel:       { fontSize: 9, letterSpacing: 5, color: C.orange, fontFamily: 'monospace', marginBottom: 6 },
-  questionText:     { fontSize: 15, color: C.text, fontFamily: 'monospace', lineHeight: 22 },
+  coachLabel:       { fontSize: 13, color: colors.accent, marginBottom: 4, fontWeight: '600' },
+  questionText:     { fontSize: 17, color: colors.text, lineHeight: 22 },
 
-  inputArea:        { gap: 8 },
+  inputArea:        { gap: spacing.sm },
 
-  numberRow:        { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  numberRow:        { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   numberInput:      {
     flex: 1,
     fontSize: 42,
-    fontWeight: 'bold',
-    color: C.orange,
-    fontFamily: 'monospace',
+    fontWeight: '700',
+    color: colors.accent,
+    fontVariant: ['tabular-nums'],
     textAlign: 'center',
     borderBottomWidth: 2,
-    borderBottomColor: C.orange,
-    paddingVertical: 8,
+    borderBottomColor: colors.accent,
+    paddingVertical: spacing.sm,
     minHeight: 72,
   },
-  unit:             { fontSize: 13, color: C.textMuted, fontFamily: 'monospace' },
+  unit:             { fontSize: 17, color: colors.textSecondary },
 
   textareaInput:    {
-    backgroundColor: C.surface,
-    borderWidth: 1, borderColor: '#222',
-    color: C.text,
-    fontFamily: 'monospace',
-    fontSize: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.separator,
+    borderRadius: radii.sm,
+    color: colors.text,
+    fontSize: 17,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     minHeight: 88,
     textAlignVertical: 'top',
   },
 
-  optionList:       { gap: 8 },
+  optionList:       { gap: spacing.sm },
   option:           {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: C.surface,
-    borderWidth: 1, borderColor: '#1f1f1f',
-    paddingVertical: 14, paddingHorizontal: 16,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.separator,
+    borderRadius: radii.sm,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.md,
+    minHeight: MIN_TOUCH,
   },
-  optionActive:     { borderColor: C.orange, backgroundColor: '#1e1208' },
-  optionText:       { fontSize: 13, color: C.textDim, fontFamily: 'monospace' },
-  optionTextActive: { color: C.orange },
+  optionActive:     { borderColor: colors.accent, backgroundColor: colors.accentMuted },
+  optionText:       { fontSize: 17, color: colors.textSecondary, flex: 1 },
+  optionTextActive: { color: colors.text, fontWeight: '600' },
 
-  errorText:        { fontSize: 11, color: '#f87171', fontFamily: 'monospace', paddingHorizontal: 20, marginBottom: 8 },
+  errorText:        { fontSize: 15, color: colors.error, paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
 
-  footer:           { paddingHorizontal: 20, paddingTop: 12, gap: 10, borderTopWidth: 1, borderTopColor: '#141414' },
-  nextBtn:          { backgroundColor: C.orange, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', minHeight: 44 },
+  footer:           { paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator },
+  nextBtn:          { backgroundColor: colors.accent, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', minHeight: MIN_TOUCH, borderRadius: radii.sm },
   nextBtnDisabled:  { opacity: 0.35 },
-  nextBtnText:      { fontSize: 11, fontWeight: 'bold', letterSpacing: 6, color: C.bg, fontFamily: 'monospace' },
-  skipBtn:          { alignItems: 'center', paddingVertical: 8 },
-  skipText:         { fontSize: 10, color: C.textDim, fontFamily: 'monospace', letterSpacing: 3 },
+  nextBtnText:      { fontSize: 17, fontWeight: '600', color: '#FFFFFF' },
+  skipBtn:          { alignItems: 'center', paddingVertical: spacing.sm, minHeight: MIN_TOUCH, justifyContent: 'center' },
+  skipText:         { fontSize: 15, color: colors.textTertiary },
 })
